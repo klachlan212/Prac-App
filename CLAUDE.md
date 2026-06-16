@@ -318,6 +318,18 @@ a one-off. It changes how you work:
   real boundary. Net: no middleware = the error class is gone by construction. Also clarified
   the recurring symptom that each Vercel deployment keeps a frozen per-deployment URL; test the
   canonical production domain, not an old `…-<hash>.vercel.app` link.
+- **2026-06-16** — **All routes 404 on Vercel (build green, code clean).** With middleware gone,
+  every route — `/`, `/sign-in`, everything — returned 404, even though `npm run verify` emits
+  all of them and the repo is a textbook Next.js app (no `vercel.json`, empty `next.config.ts`,
+  no `output: 'export'`/`basePath`). Cause: the Vercel **project** wasn't building/serving this
+  as Next.js — a leftover from when the project deployed the static Hello-World `index.html`
+  (the middleware 500 had been masking it, since middleware ran before routing). Fix attempted
+  from the code side: added `vercel.json` with `"framework": "nextjs"`, `"buildCommand":
+  "next build"`, `"installCommand": "npm ci"` to force Next.js handling and override stale
+  dashboard build settings. If routes still 404 after this, the dashboard itself must be
+  corrected: Settings → Build & Deployment → Framework Preset = **Next.js**, Build/Output/Install
+  overrides **off** (default), Root Directory **empty**; and the deployment's Build Logs should
+  show Next.js detected and the route list.
 
 ---
 
