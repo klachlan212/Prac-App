@@ -35,9 +35,16 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Never let a transient Supabase/auth error hard-crash the gate. RLS is the
+  // real security boundary; this redirect is only a UX gate, so failing to a
+  // null user (which sends protected paths to /sign-in) is the safe direction.
+  let user = null
+  try {
+    const result = await supabase.auth.getUser()
+    user = result.data.user
+  } catch {
+    user = null
+  }
 
   const path = request.nextUrl.pathname
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + '/'))
@@ -58,6 +65,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
+  // Run on the Node.js runtime, not Edge. `@supabase/ssr` pulls in the full
+  // `@supabase/supabase-js`, which uses Node-only globals (`process.version`,
+  // `__dirname`). On the Edge runtime those are undefined and the middleware
+  // throws MIDDLEWARE_INVOCATION_FAILED on every request. Node.js middleware is
+  // stable as of Next.js 15.5. See CLAUDE.md §6 (runtime-environment quirks).
+  runtime: 'nodejs',
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-.*\\.png|.*\\.svg).*)',
   ],
