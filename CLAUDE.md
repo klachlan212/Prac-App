@@ -188,11 +188,29 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 
 ## 8. Git & workflow discipline
 
-- Develop on the designated feature branch (currently `claude/magical-hamilton-vugy39`).
-  Never push to another branch without explicit permission.
+- Develop on the designated feature branch (currently `claude/confident-turing-wspzot`).
+  Never push to another branch — especially `main` (production) — without explicit
+  permission.
 - Descriptive commit messages: what changed and why. One logical change per commit where
   practical.
 - Do not open a pull request unless explicitly asked.
+
+### 8.1 Operator context — who you're working with
+
+The product owner is **not deeply versed in Vercel or Supabase** (infrastructure,
+deployments, branches, env vars, DNS, build settings). Treat that as a standing fact, not
+a one-off. It changes how you work:
+
+- **Inspect and act yourself.** Use the MCP tools (Supabase, GitHub) and the local git
+  state to find out the real situation before reporting — don't hand the operator raw infra
+  tasks ("go check your Vercel production branch") as if they'll know how. Within the branch
+  rules above, make the necessary infra changes directly; for anything outward-facing or
+  hard to reverse (e.g. pushing to `main`/production), explain it and get a yes first, but
+  come with the change *prepared*, not as homework for them.
+- **When you must explain, explain in depth and in plain language.** Spell out what the
+  thing is, why it's the cause, and what the fix does — assume no prior Vercel/Supabase
+  knowledge. "What you're lacking" answers are welcome and should be thorough.
+- Never assume an infra concept is understood. A short glossary beats a bare term.
 
 ---
 
@@ -232,6 +250,21 @@ rather than pushing unverified — never claim a build passed that wasn't run.
   `overrides` block (fixes the copy bundled inside Next.js too). `npm audit` now reports
   **0 vulnerabilities**; `npm run verify` green. Lesson: trust `npm audit`, not just the
   build log — and `npm audit fix --force` can suggest absurd downgrades; patch deliberately.
+- **2026-06-16** — Database migrations + seeds applied to Supabase project
+  `kkytglabcwevvnjmmrhy` (`prac-app-database`, region `ap-southeast-2` Sydney). Verified:
+  10 tables RLS-enabled, 11 universities, 7 ANSAT standards, all 4 functions present.
+  Security advisor flags pending (mutable `search_path` on the 3 SECURITY DEFINER functions;
+  `organizations` RLS-enabled-no-policy). Supabase migration-history table is empty (schema
+  was applied via raw SQL, not `apply_migration`).
+- **2026-06-16** — Operator context codified (§8.1): product owner is not versed in
+  Vercel/Supabase, so Claude inspects/changes infra itself and explains in depth.
+- **2026-06-16** — **Production-deploy gap found.** `main` (Vercel's production branch) is
+  NOT the Next.js app — it's a static "Hello World" `index.html` placeholder pinned by a
+  `vercel.json` (`@vercel/static`) with hardcoded `YOUR_SUPABASE_URL` placeholders. The real
+  app lives only on the feature branch and has never been promoted to production, so adding
+  env vars in Vercel changed nothing the user could see. Fix requires putting the app on the
+  production branch and removing the static `vercel.json`/`index.html` so Vercel builds
+  Next.js. Awaiting owner go-ahead to push to `main`.
 
 ---
 
