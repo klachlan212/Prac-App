@@ -1,0 +1,36 @@
+name: CI
+
+# Runs the same checks Vercel runs, on every push and PR, so a broken
+# build is caught here before it ever reaches a deploy.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (reproducible)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+        env:
+          # Placeholder values so the build succeeds without real secrets.
+          # RLS makes the anon key safe; these are never used at runtime here.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
