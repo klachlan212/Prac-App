@@ -66,22 +66,71 @@ and ask the product owner.
 
 ---
 
-## 4. Security & privacy engineering (health-data baseline)
+## 4. Security & privacy — the first lens on everything
 
-- **Encrypt in transit and at rest.** Restrict every content row to its owner with RLS.
-  Deny by default; grant the minimum.
-- **No PII or content in logs or error payloads.** If an error reporter is ever added,
-  scrub message bodies. Telemetry (if any) is anonymous event counts only, off by default,
-  explicit opt-in.
-- **Data minimization.** Collect only the onboarding fields the spec names. No contacts,
-  no precise location, nothing not used by a named feature.
-- **Soft delete + scheduled hard delete.** User content carries `deleted_at`. Provide and
-  honour a real account-and-content deletion path.
-- **Secrets live in environment variables, never in the repo.** The only key allowed in
-  the client bundle is the Supabase **anon** key (`NEXT_PUBLIC_*`), which is safe *only
-  because RLS is enforced*. The service-role key is never shipped to the browser.
-- **The write screen persistently discourages patient-identifiable detail;** onboarding
-  states this once.
+Security and least-privilege access are the **primary design constraint** of this product,
+not an afterthought. **Apply this lens to every feature, every table, every endpoint, and
+every dependency — by default, without being asked.** When a new feature is discussed, the
+first questions are always:
+
+> *Who can read this? Who can write this? What is the least access that makes it work?
+> Where does the data live and travel? What happens to it on delete? What breaks if the
+> client is malicious or an admin session is stolen?*
+
+If a feature can't answer those, it isn't ready to build. Surface the security implications
+of any new feature **proactively**, as part of proposing it — don't wait to be asked.
+
+### 4.1 Access control — least privilege, deny by default
+
+- **Every user can access only their own data — and only the operations their role allows.**
+  Authorization is enforced in the database with Row Level Security, never only in the UI.
+  A compromised client, a forged request, or a stolen admin session must still hit a wall
+  at the database.
+- **Deny by default.** A new table ships with RLS enabled and *no* policy, then we add the
+  narrowest policy the feature needs. Never open a table "just for now."
+- **Owner-scoped content** (`profiles`, `placements`, `reflections`, `reflection_standards`,
+  `reflection_tags`) grants a row only when it belongs to `auth.uid()`.
+- **Role-scoped metadata** (organizations, memberships, invitations) uses role-aware
+  policies; an admin only ever reaches organizations they actually administer.
+- **Admins never reach content** — not reflections, tags, or exports, by any path. Admin
+  metrics come solely from a `security definer` function that returns counts. Verify this
+  with a second account before any admin feature is called done.
+- **Never trust client-supplied identity or authority.** Role, `org_id`, and `user_id` are
+  derived from the session server-side, never accepted from the request. This is how
+  privilege escalation is made impossible by construction.
+- **The service-role key never touches the browser.** Only the anon key ships client-side,
+  and it is safe *only because* RLS holds.
+
+### 4.2 Data protection
+
+- Encrypt in transit and at rest. Treat reflection content and derived tags as the most
+  sensitive class of data in the system.
+- **No PII and no content in logs, analytics, or error payloads — ever.** If an error
+  reporter is added, scrub message bodies. Telemetry is anonymous counts only, off by
+  default, explicit opt-in.
+- **Data minimization.** Collect only the named onboarding fields. No contacts, no precise
+  location, nothing not used by a shipped feature.
+- **Deletion is real.** Soft delete with a recovery window, then scheduled hard delete.
+  Honour a genuine account-and-content deletion path.
+- **Australian data residency** (Supabase Sydney) while the market is Australian.
+
+### 4.3 Secrets & supply chain
+
+- Secrets live only in environment variables — never in the repo or the client bundle.
+- **Patch security issues immediately and automatically — never ask permission to fix a
+  known vulnerability.** When a build log, `npm audit`, or an advisory flags a vulnerable
+  dependency, bump it to the nearest safe patched version on its own commit, re-run
+  `npm run verify`, and push. Prefer the minimal in-line patch (same major/minor) over a
+  risky major jump. Escalate *only* if the sole available fix is a breaking major upgrade —
+  and even then, lead with the recommendation to take it.
+- Keep `package-lock.json` committed so installs are reproducible and auditable.
+
+### 4.4 In the product
+
+- The write screen persistently discourages patient-identifiable detail; onboarding states
+  the expectation once.
+- Before any feature touching content, sharing, or admin visibility is called done,
+  re-read §2 and this section and confirm nothing is weakened.
 
 ---
 
@@ -125,7 +174,11 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 ## 7. Definition of Done (every change must pass this)
 
 - [ ] `npm run verify` is **green** locally (lint, typecheck, build).
+- [ ] **Access control reviewed (§4.1):** users reach only their own data; any new table is
+      deny-by-default with the narrowest RLS policy; no admin path can reach content;
+      identity/role is derived server-side, never trusted from the client.
 - [ ] No secrets, no reflection content, and no PII in code, logs, commits, or error paths.
+- [ ] No new or known-vulnerable dependency introduced; advisories patched (§4.3).
 - [ ] Any new table/column has RLS and respects the §2 invariants.
 - [ ] UI changes meet the §5 accessibility bar.
 - [ ] Committed with a clear, descriptive message and pushed to the feature branch.
@@ -167,6 +220,15 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 - **2026-06-16** — Platform confirmed: web-first Next.js PWA on Vercel + Supabase.
 - **2026-06-16** — Build broke on Vercel from an untyped `@supabase/ssr` cookie callback.
   Lesson encoded as §6: always run `npm run verify` before pushing. Added CI as a net.
+- **2026-06-16** — Security elevated to the primary design lens (§4 rewritten): explicit
+  least-privilege access model, deny-by-default RLS, server-derived identity, and a standing
+  rule to **auto-patch security advisories without asking**.
+- **2026-06-16** — Security patch pass. `npm audit` showed Next.js `15.3.x` still carried
+  many high-severity advisories (SSRF, cache poisoning, XSS, DoS), so patched Next.js
+  `15.3.3` → `15.5.19` (same major, minor bump) and forced `postcss` `>=8.5.10` via an
+  `overrides` block (fixes the copy bundled inside Next.js too). `npm audit` now reports
+  **0 vulnerabilities**; `npm run verify` green. Lesson: trust `npm audit`, not just the
+  build log — and `npm audit fix --force` can suggest absurd downgrades; patch deliberately.
 
 ---
 

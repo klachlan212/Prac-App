@@ -11,7 +11,7 @@
     "verify": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
-    "next": "15.3.3",
+    "next": "15.5.19",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@supabase/supabase-js": "^2.50.0",
@@ -25,9 +25,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^3.4.1",
-    "postcss": "^8",
+    "postcss": "^8.5.10",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
-    "eslint-config-next": "15.3.3"
+    "eslint-config-next": "15.5.19"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
   }
 }
