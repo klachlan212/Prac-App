@@ -158,6 +158,19 @@ could have caught locally.**
 - **Before every commit/push, run `npm run verify` and see it GREEN.** This runs lint +
   typecheck + production build — the same things Vercel runs. No exceptions, even for
   "one-line" changes.
+- **A green build is necessary, not sufficient — mind the runtime, not just the compile.**
+  Code can build cleanly and still crash on the runtime it actually deploys to. The classic
+  trap here: **Next.js middleware runs on the Edge runtime by default**, where Node-only
+  globals and APIs (`__dirname`, `process.version`, `fs`, `path`, most of `node:*`) do not
+  exist. A dependency that uses them compiles fine (often just a *warning* like "A Node.js
+  API is used … not supported in the Edge Runtime") and then throws at request time —
+  `MIDDLEWARE_INVOCATION_FAILED` / `ReferenceError: __dirname is not defined` — on a build
+  Vercel reported as successful. Treat Edge-runtime warnings as errors. When server code
+  needs Node-only deps (e.g. `@supabase/ssr`, which pulls in the full `@supabase/supabase-js`),
+  either keep them out of the Edge bundle or pin the file to the Node.js runtime
+  (`export const config = { runtime: 'nodejs' }`, stable since Next.js 15.5). The general
+  rule: **know which runtime each file deploys to (Edge vs Node vs browser), and confirm its
+  imports are legal there** — the build won't always tell you.
 - **CI runs the same checks on every push** (`.github/workflows/ci.yml`). A red CI is
   never merged. CI is the safety net; local `verify` is the first line.
 - **Treat security advisories as work.** When the build log flags a vulnerable dependency
@@ -173,7 +186,9 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 
 ## 7. Definition of Done (every change must pass this)
 
-- [ ] `npm run verify` is **green** locally (lint, typecheck, build).
+- [ ] `npm run verify` is **green** locally (lint, typecheck, build) — *and* any code that
+      deploys to the Edge runtime (notably `middleware.ts`) is free of Node-only APIs, or is
+      pinned to the Node.js runtime (§6 runtime-quirk rule). A green build ≠ a working deploy.
 - [ ] **Access control reviewed (§4.1):** users reach only their own data; any new table is
       deny-by-default with the narrowest RLS policy; no admin path can reach content;
       identity/role is derived server-side, never trusted from the client.
@@ -264,7 +279,16 @@ a one-off. It changes how you work:
   app lives only on the feature branch and has never been promoted to production, so adding
   env vars in Vercel changed nothing the user could see. Fix requires putting the app on the
   production branch and removing the static `vercel.json`/`index.html` so Vercel builds
-  Next.js. Awaiting owner go-ahead to push to `main`.
+  Next.js. (Resolved when the owner merged the app to `main` via PR #2.)
+- **2026-06-16** — **`MIDDLEWARE_INVOCATION_FAILED` on production.** Once the real app was on
+  `main`, every request 500'd with `ReferenceError: __dirname is not defined`. Root cause:
+  `middleware.ts` imports `createServerClient` from `@supabase/ssr`, which bundles the full
+  `@supabase/supabase-js` (uses `process.version`/`__dirname`); Next.js runs middleware on the
+  **Edge runtime** by default, where those Node globals don't exist. The build only *warned*
+  about `process.version` and otherwise passed — a green build, broken deploy. Fix: pin the
+  middleware to the Node.js runtime (`runtime: 'nodejs'`, stable since Next 15.5) and wrap the
+  `getUser()` call in try/catch (fail to null user → protected paths go to /sign-in). Lesson
+  encoded in §6: a green build is not a working deploy; mind the Edge-vs-Node runtime.
 
 ---
 
