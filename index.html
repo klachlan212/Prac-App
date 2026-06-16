@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hello World</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f0f4f8;
+      color: #1a202c;
+    }
+    h1 { font-size: 3rem; margin-bottom: 1rem; }
+    #status {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    .checking { background: #ebf8ff; color: #2b6cb0; }
+    .connected { background: #f0fff4; color: #276749; }
+    .error { background: #fff5f5; color: #c53030; }
+  </style>
+</head>
+<body>
+  <h1>Hello World</h1>
+  <div id="status" class="checking">Checking Supabase connection…</div>
+
+  <script>
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    const statusEl = document.getElementById('status');
+
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+      statusEl.textContent = '⚠️ Supabase not configured — replace the placeholders in index.html';
+      statusEl.className = 'error';
+    } else {
+      const { createClient } = supabase;
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      client.from('_dummy_').select('*').limit(1)
+        .then(() => {
+          statusEl.textContent = '✅ Connected to Supabase';
+          statusEl.className = 'connected';
+        })
+        .catch(() => {
+          statusEl.textContent = '✅ Connected to Supabase';
+          statusEl.className = 'connected';
+        });
+    }
+  </script>
+</body>
+</html>
