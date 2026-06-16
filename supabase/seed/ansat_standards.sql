@@ -1,0 +1,15 @@
+insert into ansat_standards (id, track, ordinal, title, prompt) values
+(1, 'RN', 1, 'Thinks critically and analyses nursing practice',
+ 'What did you observe or question today that made you think more deeply about a clinical situation?'),
+(2, 'RN', 2, 'Engages in therapeutic and professional relationships',
+ 'Describe a moment of connection or communication with a patient, family member, or colleague. What worked well and what would you do differently?'),
+(3, 'RN', 3, 'Maintains the capability for practice',
+ 'What did you do today to maintain or develop your own knowledge, skills, or wellbeing?'),
+(4, 'RN', 4, 'Comprehensively conducts assessments',
+ 'Walk through an assessment you carried out. What did you find, and what informed your approach?'),
+(5, 'RN', 5, 'Develops a plan for nursing practice',
+ 'What care plan did you contribute to today? How did you prioritise the patient''s needs?'),
+(6, 'RN', 6, 'Provides safe, appropriate and responsive quality nursing practice',
+ 'Describe a situation where you acted to ensure safety or quality of care. What was the outcome?'),
+(7, 'RN', 7, 'Evaluates outcomes to inform nursing practice',
+ 'How did you check whether the care you provided achieved the intended outcome? What would you change next time?');
