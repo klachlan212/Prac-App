@@ -330,6 +330,16 @@ a one-off. It changes how you work:
   corrected: Settings → Build & Deployment → Framework Preset = **Next.js**, Build/Output/Install
   overrides **off** (default), Root Directory **empty**; and the deployment's Build Logs should
   show Next.js detected and the route list.
+- **2026-06-16** — **Added email+password sign-in alongside the OTP flow.** Supabase free-tier
+  limits the built-in email sender, throttling the one-time-code login during dev. Added
+  `signInWithPassword` to the sign-in screen (now the default; OTP kept as a fallback toggle)
+  so dev/test logins don't depend on email. Uses the anon key client-side like the rest of
+  auth — no service-role exposure. Note this is a deviation from the OTP-only design in §1/§9;
+  acceptable as an additional method. Also seeded a demo for `klachlan212@gmail.com`: a
+  `profiles` row, one active placement, and 4 standard-tagged sample reflections (synthetic,
+  no patient-identifiable detail, per §4.4). A bcrypt password was set directly on that
+  `auth.users` row via `pgcrypto`. Alternative to raising limits without passwords: configure
+  custom SMTP in Supabase Auth settings.
 
 ---
 
