@@ -165,12 +165,17 @@ could have caught locally.**
   exist. A dependency that uses them compiles fine (often just a *warning* like "A Node.js
   API is used … not supported in the Edge Runtime") and then throws at request time —
   `MIDDLEWARE_INVOCATION_FAILED` / `ReferenceError: __dirname is not defined` — on a build
-  Vercel reported as successful. Treat Edge-runtime warnings as errors. When server code
-  needs Node-only deps (e.g. `@supabase/ssr`, which pulls in the full `@supabase/supabase-js`),
-  either keep them out of the Edge bundle or pin the file to the Node.js runtime
-  (`export const config = { runtime: 'nodejs' }`, stable since Next.js 15.5). The general
-  rule: **know which runtime each file deploys to (Edge vs Node vs browser), and confirm its
-  imports are legal there** — the build won't always tell you.
+  Vercel reported as successful. Treat Edge-runtime warnings as errors. The right fix is to
+  **keep Node-only deps out of the middleware bundle**: middleware should do only cheap,
+  Edge-safe work (read cookies/headers, redirect) and never import a heavy client like
+  `@supabase/ssr` (which pulls in the full `@supabase/supabase-js`). Push real auth to where
+  it belongs — Postgres RLS and the server-side Supabase client used by pages/route handlers
+  (which run on the Node serverless runtime). **Do not reach for `runtime: 'nodejs'` on
+  middleware as the escape hatch:** on Vercel it can fail a different way — the function is
+  emitted as CommonJS `middleware.js` containing ESM `import`s and dies with "Cannot use
+  import statement outside a module". The general rule: **know which runtime each file
+  deploys to (Edge vs Node vs browser), and confirm its imports are legal there** — the
+  build won't always tell you.
 - **CI runs the same checks on every push** (`.github/workflows/ci.yml`). A red CI is
   never merged. CI is the safety net; local `verify` is the first line.
 - **Treat security advisories as work.** When the build log flags a vulnerable dependency
@@ -187,8 +192,8 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 ## 7. Definition of Done (every change must pass this)
 
 - [ ] `npm run verify` is **green** locally (lint, typecheck, build) — *and* any code that
-      deploys to the Edge runtime (notably `middleware.ts`) is free of Node-only APIs, or is
-      pinned to the Node.js runtime (§6 runtime-quirk rule). A green build ≠ a working deploy.
+      deploys to the Edge runtime (notably `middleware.ts`) is free of Node-only APIs and
+      heavy clients (§6 runtime-quirk rule). A green build ≠ a working deploy.
 - [ ] **Access control reviewed (§4.1):** users reach only their own data; any new table is
       deny-by-default with the narrowest RLS policy; no admin path can reach content;
       identity/role is derived server-side, never trusted from the client.
@@ -289,6 +294,16 @@ a one-off. It changes how you work:
   middleware to the Node.js runtime (`runtime: 'nodejs'`, stable since Next 15.5) and wrap the
   `getUser()` call in try/catch (fail to null user → protected paths go to /sign-in). Lesson
   encoded in §6: a green build is not a working deploy; mind the Edge-vs-Node runtime.
+- **2026-06-16** — **Correction: the Node.js-runtime middleware fix above also failed on
+  Vercel.** Pinning middleware to `runtime: 'nodejs'` got past the `__dirname` Edge crash, but
+  Vercel then emitted the function as CommonJS `middleware.js` holding ESM `import`s →
+  `SyntaxError: Cannot use import statement outside a module` (loading `/var/task/middleware.js`).
+  Real fix: **drop `@supabase/ssr` from the middleware entirely** and gate on the Edge runtime
+  using only the presence of Supabase's `sb-<ref>-auth-token` cookie (excluding the transient
+  `-code-verifier` cookie). Middleware bundle dropped 90 kB → 34 kB, no Node deps, no runtime
+  override. Auth is still enforced for real by RLS + the server-side Supabase client on each
+  page; the middleware is just a UX redirect. §6 updated to say: keep heavy clients out of
+  middleware, don't use `runtime: 'nodejs'` as an escape hatch.
 
 ---
 
