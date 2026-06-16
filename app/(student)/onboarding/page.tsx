@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
+import { createClient } from '@/src/auth/client'
 import { getUniversities } from '@/src/data/standards'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
@@ -78,6 +79,13 @@ export default function OnboardingPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       })
+
+      // If the student arrived from an organization invitation, join them now.
+      const token = new URLSearchParams(window.location.search).get('invite')
+      if (token) {
+        await createClient().rpc('accept_invitation', { p_token: token })
+      }
+
       router.replace('/reflections')
     } catch {
       setError('Something went wrong saving your profile. It is saved on your device; try again.')

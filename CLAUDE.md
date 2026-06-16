@@ -200,18 +200,21 @@ rather than pushing unverified — never claim a build passed that wasn't run.
 
 1. [x] **Scaffold** — Next.js, Supabase migration (all tables + RLS + admin metrics fn),
    seeds (universities, 7 RN ANSAT standards).
-2. [ ] **Auth** — Supabase email one-time code, secure session, profile creation.
-3. [ ] **Local-first data layer** — Dexie schema, repositories, sync queue. Prove an
-   offline write survives reload and later syncs. *(Highest-risk milestone — do before
-   interface polish.)*
-4. [ ] **Write + list screens** — multi-standard tagging, continuous autosave.
-5. [ ] **On-device tagging (tier one)** — lexicon suggestions, confirmed → stored tags.
-6. [ ] **Export** — paginated PDF, then plain text.
-7. [ ] **Onboarding** + confidentiality statement.
-8. [ ] **Reminders** — weekly email function, in-app banner, settings.
-9. [ ] **Admin** — organizations, invitations, roster, count-only metrics.
-10. [ ] **Lifecycle/theme/a11y/empty states** + time-to-write pass.
-11. [ ] **Verify every acceptance criterion** (spec §12).
+2. [x] **Auth** — Supabase email one-time code, session middleware, profile creation.
+3. [x] **Local-first data layer** — Dexie schema, repositories, sync queue + engine
+   (push with join-table fan-out, pull with last-write-wins).
+4. [x] **Write + list screens** — multi-standard tagging, continuous autosave, soft
+   delete with undo.
+5. [x] **On-device tagging (tier one)** — local lexicon suggestions, confirmed → stored.
+6. [x] **Export** — paginated PDF (print) + plain text via one `exportPlacement` seam.
+7. [x] **Onboarding** + one-time confidentiality acknowledgement + invite acceptance.
+8. [x] **Reminders** — in-app weekly banner, settings; weekly email Edge Function written
+   (`supabase/functions/weekly-reminder`, deploy + cron pending — see file header).
+9. [x] **Admin** — org bootstrap, invitations, roster, count-only adherence metrics.
+10. [~] **Lifecycle/theme/a11y/empty states** — placement archive, dark theme, 44px
+    targets, empty states done; dedicated time-to-write pass still to do.
+11. [ ] **Verify every acceptance criterion** (spec §12) — needs migrations run + a manual
+    pass with two accounts (esp. the RLS/admin no-content checks).
 
 ---
 
