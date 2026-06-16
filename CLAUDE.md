@@ -175,7 +175,11 @@ could have caught locally.**
   emitted as CommonJS `middleware.js` containing ESM `import`s and dies with "Cannot use
   import statement outside a module". The general rule: **know which runtime each file
   deploys to (Edge vs Node vs browser), and confirm its imports are legal there** — the
-  build won't always tell you.
+  build won't always tell you. **On this project, even a dependency-free Edge middleware
+  still failed with `MIDDLEWARE_INVOCATION_FAILED` on Vercel**, so the middleware was removed
+  entirely and the auth redirect moved to a client guard (`src/auth/guard.tsx`). If Vercel
+  middleware misbehaves inexplicably, prefer client-/server-component gating over fighting
+  the middleware runtime — there is no app feature that *requires* middleware here.
 - **CI runs the same checks on every push** (`.github/workflows/ci.yml`). A red CI is
   never merged. CI is the safety net; local `verify` is the first line.
 - **Treat security advisories as work.** When the build log flags a vulnerable dependency
@@ -304,6 +308,16 @@ a one-off. It changes how you work:
   override. Auth is still enforced for real by RLS + the server-side Supabase client on each
   page; the middleware is just a UX redirect. §6 updated to say: keep heavy clients out of
   middleware, don't use `runtime: 'nodejs'` as an escape hatch.
+- **2026-06-16** — **Middleware removed entirely.** Even the dependency-free Edge cookie gate
+  still 500'd on Vercel with `MIDDLEWARE_INVOCATION_FAILED` across every recent deployment, so
+  the cause is the middleware mechanism on this project, not its contents. Deleted
+  `middleware.ts` and moved the auth redirect to a client guard (`src/auth/guard.tsx`) wired
+  into the `(student)` and `(admin)` layouts: it reads the Supabase session client-side and
+  redirects unauthenticated users to `/sign-in` (and signed-in users away from it). No content
+  leaks — protected pages render from the per-device local store, and Postgres RLS remains the
+  real boundary. Net: no middleware = the error class is gone by construction. Also clarified
+  the recurring symptom that each Vercel deployment keeps a frozen per-deployment URL; test the
+  canonical production domain, not an old `…-<hash>.vercel.app` link.
 
 ---
 
