@@ -10,7 +10,7 @@ begin
 end;
 $$;
 
--- universities (reference data, world-readable)
+-- universities (reference, world-readable)
 create table universities (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
@@ -52,18 +52,6 @@ create table organizations (
   updated_at  timestamptz not null default now()
 );
 alter table organizations enable row level security;
-create policy "organizations: admin sees own" on organizations
-  for select using (
-    exists (
-      select 1 from memberships m
-      where m.org_id = organizations.id
-        and m.user_id = auth.uid()
-        and m.role in ('owner', 'admin')
-        and m.status = 'active'
-    )
-  );
-create policy "organizations: owner inserts" on organizations
-  for insert with check (created_by = auth.uid());
 create trigger organizations_updated_at before update on organizations
   for each row execute function set_updated_at();
 
@@ -80,6 +68,9 @@ create table memberships (
   unique (org_id, user_id)
 );
 alter table memberships enable row level security;
+create trigger memberships_updated_at before update on memberships
+  for each row execute function set_updated_at();
+-- Members see their own memberships; org owners/admins see all memberships in their orgs
 create policy "memberships: own row" on memberships
   for select using (user_id = auth.uid());
 create policy "memberships: admin sees org" on memberships
@@ -92,7 +83,7 @@ create policy "memberships: admin sees org" on memberships
         and m.status = 'active'
     )
   );
-create policy "memberships: admin inserts" on memberships
+create policy "memberships: owner inserts" on memberships
   for insert with check (
     exists (
       select 1 from memberships m
@@ -102,8 +93,6 @@ create policy "memberships: admin inserts" on memberships
         and m.status = 'active'
     )
   );
-create trigger memberships_updated_at before update on memberships
-  for each row execute function set_updated_at();
 
 -- invitations
 create table invitations (
@@ -120,16 +109,6 @@ create table invitations (
 alter table invitations enable row level security;
 create policy "invitations: admin sees org" on invitations
   for select using (
-    exists (
-      select 1 from memberships m
-      where m.org_id = invitations.org_id
-        and m.user_id = auth.uid()
-        and m.role in ('owner', 'admin')
-        and m.status = 'active'
-    )
-  );
-create policy "invitations: admin inserts" on invitations
-  for insert with check (
     exists (
       select 1 from memberships m
       where m.org_id = invitations.org_id
@@ -177,7 +156,7 @@ create policy "reflections: owner only" on reflections
 create trigger reflections_updated_at before update on reflections
   for each row execute function set_updated_at();
 
--- ansat_standards (reference data, world-readable)
+-- ansat_standards (reference, world-readable)
 create table ansat_standards (
   id      smallint primary key,
   track   text not null default 'RN',
@@ -188,7 +167,7 @@ create table ansat_standards (
 alter table ansat_standards enable row level security;
 create policy "ansat_standards are world-readable" on ansat_standards for select using (true);
 
--- reflection_standards (many-to-many)
+-- reflection_standards (many-to-many join)
 create table reflection_standards (
   reflection_id uuid not null references reflections(id) on delete cascade,
   standard_id   smallint not null references ansat_standards(id),
@@ -211,7 +190,7 @@ create policy "reflection_standards: owner only" on reflection_standards
     )
   );
 
--- reflection_tags (on-device derived, owner-scoped, never visible to admins)
+-- reflection_tags (on-device derived, owner-scoped)
 create table reflection_tags (
   id            uuid primary key default gen_random_uuid(),
   reflection_id uuid not null references reflections(id) on delete cascade,
@@ -226,19 +205,21 @@ create policy "reflection_tags: owner only" on reflection_tags
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
--- Admin adherence metrics (counts only, never returns content)
+-- Admin metrics function (counts only, never returns content)
 create or replace function get_org_adherence(p_org_id uuid)
 returns table (
-  user_id           uuid,
-  full_name         text,
-  cohort            text,
-  membership_status text,
-  reflection_count  bigint,
-  last_reflected_on date,
-  on_track          boolean
+  user_id            uuid,
+  full_name          text,
+  cohort             text,
+  membership_status  text,
+  reflection_count   bigint,
+  last_reflected_on  date,
+  export_count       bigint,
+  on_track           boolean
 )
 language plpgsql security definer as $$
 begin
+  -- Verify caller is admin/owner of this org
   if not exists (
     select 1 from memberships m
     where m.org_id = p_org_id
@@ -251,16 +232,17 @@ begin
 
   return query
   select
-    p.id                                                        as user_id,
+    p.id as user_id,
     p.full_name,
     mem.cohort,
-    mem.status                                                  as membership_status,
-    count(r.id) filter (where r.deleted_at is null)            as reflection_count,
-    max(r.reflected_on)                                         as last_reflected_on,
+    mem.status as membership_status,
+    count(r.id) filter (where r.deleted_at is null) as reflection_count,
+    max(r.reflected_on) as last_reflected_on,
+    0::bigint as export_count,
     (
       max(r.reflected_on) is not null
       and max(r.reflected_on) >= current_date - interval '7 days'
-    )                                                           as on_track
+    ) as on_track
   from memberships mem
   join profiles p on p.id = mem.user_id
   left join placements pl on pl.user_id = p.id and pl.status = 'active'
