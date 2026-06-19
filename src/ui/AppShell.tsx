@@ -16,9 +16,9 @@ const SYNC_LABEL: Record<SyncState, string> = {
 
 const SYNC_DOT: Record<SyncState, string> = {
   offline: 'bg-amber-400',
-  syncing: 'bg-sky-400 animate-pulse',
-  pending: 'bg-sky-400',
-  synced: 'bg-emerald-500',
+  syncing: 'bg-teal animate-pulse',
+  pending: 'bg-teal',
+  synced: 'bg-teal-deep',
 }
 
 const NAV = [
@@ -49,14 +49,17 @@ export function AppShell({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
+      <header className="sticky top-0 z-10 border-b border-line bg-paper/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-          <Link href="/reflections" className="text-lg font-semibold tracking-tight">
-            Prac
+          <Link
+            href="/reflections"
+            className="font-display text-xl font-semibold tracking-tight text-ink"
+          >
+            Prac<span className="text-teal">.</span>
           </Link>
           <div className="flex items-center gap-3">
             <span
-              className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+              className="flex items-center gap-1.5 text-xs text-ink-faint"
               title={SYNC_LABEL[state]}
             >
               <span className={`h-2 w-2 rounded-full ${SYNC_DOT[state]}`} aria-hidden />
@@ -64,7 +67,7 @@ export function AppShell({
             </span>
             <button
               onClick={signOut}
-              className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
+              className="min-h-[44px] text-sm font-medium text-ink-soft hover:text-ink"
             >
               Sign out
             </button>
@@ -77,10 +80,10 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
                   active
-                    ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50'
+                    ? 'bg-new text-teal-deep'
+                    : 'text-ink-soft hover:bg-sage-100 hover:text-ink'
                 }`}
               >
                 {item.label}
