@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/src/auth/client'
 import { Button, Field, Input } from '@/src/ui/components'
 
-// Two sign-in methods:
-//  - Password (email + password): the default. Doesn't touch Supabase's email
-//    sender, so it sidesteps the free-tier one-time-code rate limits.
-//  - Email one-time code (CLAUDE.md §1, spec §4.4): passwordless fallback.
+// Two sign-in methods (CLAUDE.md §A7):
+//  - Password (email + password): default; sidesteps the free-tier one-time-code
+//    email rate limits during dev.
+//  - Email one-time code: passwordless fallback. (Spec §2 wants magic-link as the
+//    long-term default for the multi-year handoff — revisit before v1.)
 type Mode = 'password' | 'otp-email' | 'otp-code'
 
 export default function SignInPage() {
@@ -24,16 +25,12 @@ export default function SignInPage() {
     e.preventDefault()
     setError(null)
     setBusy(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await createClient().auth.signInWithPassword({
       email: email.trim(),
       password,
     })
     setBusy(false)
-    if (error) {
-      setError(error.message)
-      return
-    }
+    if (error) return setError(error.message)
     router.replace('/reflections')
   }
 
@@ -41,16 +38,12 @@ export default function SignInPage() {
     e.preventDefault()
     setError(null)
     setBusy(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await createClient().auth.signInWithOtp({
       email: email.trim(),
       options: { shouldCreateUser: true },
     })
     setBusy(false)
-    if (error) {
-      setError(error.message)
-      return
-    }
+    if (error) return setError(error.message)
     setMode('otp-code')
   }
 
@@ -58,31 +51,40 @@ export default function SignInPage() {
     e.preventDefault()
     setError(null)
     setBusy(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.verifyOtp({
+    const { error } = await createClient().auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
       type: 'email',
     })
     setBusy(false)
-    if (error) {
-      setError(error.message)
-      return
-    }
-    // Onboarding gate lives on the next screen.
+    if (error) return setError(error.message)
     router.replace('/reflections')
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in to Prac</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+      <div className="w-full max-w-sm space-y-7">
+        <div className="space-y-4 text-center">
+          <div className="font-display text-3xl font-semibold tracking-tight">
+            Prac<span className="text-teal">.</span>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-sage-50 px-3 py-1.5 text-xs font-medium text-ink">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[9px] font-bold text-teal-ink">
+              RN
+            </span>
+            Built by a registered nurse
+          </span>
+        </div>
+
+        <div className="space-y-1 text-center">
+          <h1 className="font-display text-2xl font-semibold tracking-tight">
+            {mode === 'otp-code' ? 'Check your email' : 'Welcome back'}
+          </h1>
+          <p className="text-sm text-ink-soft">
             {mode === 'password'
-              ? 'Enter your email and password.'
+              ? 'Sign in to your reflective record.'
               : mode === 'otp-email'
-                ? 'Enter your email and we’ll send you a 6-digit code.'
+                ? 'We’ll email you a 6-digit code.'
                 : `Enter the code we sent to ${email}.`}
           </p>
         </div>
@@ -98,7 +100,7 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@university.edu.au"
+                placeholder="you@student.edu.au"
               />
             </Field>
             <Field label="Password" htmlFor="password">
@@ -112,20 +114,13 @@ export default function SignInPage() {
                 placeholder="••••••••"
               />
             </Field>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button type="submit" className="w-full" disabled={busy}>
+            {error && <p className="text-sm text-flag">{error}</p>}
+            <Button type="submit" disabled={busy}>
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('otp-email')
-                setError(null)
-              }}
-              className="w-full text-center text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
-            >
+            <Button type="button" variant="ghost" onClick={() => { setMode('otp-email'); setError(null) }}>
               Email me a 6-digit code instead
-            </button>
+            </Button>
           </form>
         )}
 
@@ -140,23 +135,16 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@university.edu.au"
+                placeholder="you@student.edu.au"
               />
             </Field>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button type="submit" className="w-full" disabled={busy}>
+            {error && <p className="text-sm text-flag">{error}</p>}
+            <Button type="submit" disabled={busy}>
               {busy ? 'Sending…' : 'Continue'}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('password')
-                setError(null)
-              }}
-              className="w-full text-center text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
-            >
+            <Button type="button" variant="ghost" onClick={() => { setMode('password'); setError(null) }}>
               Use a password instead
-            </button>
+            </Button>
           </form>
         )}
 
@@ -177,21 +165,13 @@ export default function SignInPage() {
                 autoFocus
               />
             </Field>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button type="submit" className="w-full" disabled={busy || code.length < 6}>
+            {error && <p className="text-sm text-flag">{error}</p>}
+            <Button type="submit" disabled={busy || code.length < 6}>
               {busy ? 'Verifying…' : 'Verify & continue'}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('otp-email')
-                setCode('')
-                setError(null)
-              }}
-              className="w-full text-center text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
-            >
+            <Button type="button" variant="ghost" onClick={() => { setMode('otp-email'); setCode(''); setError(null) }}>
               Use a different email
-            </button>
+            </Button>
           </form>
         )}
       </div>
