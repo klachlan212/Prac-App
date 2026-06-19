@@ -12,6 +12,7 @@ import { softDeleteReflection, restoreReflection } from '@/src/data/reflections'
 import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
+import { WARD_TO_GUIDE } from '@/src/content/guides'
 
 export default function ReflectionsPage() {
   const router = useRouter()
@@ -113,6 +114,21 @@ export default function ReflectionsPage() {
             </Button>
           </Link>
         </div>
+
+        {placement?.ward && WARD_TO_GUIDE[placement.ward] && (
+          <Link href={`/guides/${WARD_TO_GUIDE[placement.ward]}`}>
+            <Card className="flex items-center gap-3 border-sage-200 bg-sage-50">
+              <span aria-hidden>🏥</span>
+              <span className="flex-1 text-sm">
+                <b className="font-semibold">{placement.ward} prep guide</b>
+                <span className="text-ink-soft"> — likely skills &amp; prompts</span>
+              </span>
+              <span className="text-sage-300" aria-hidden>
+                ›
+              </span>
+            </Card>
+          </Link>
+        )}
 
         {count > 0 && noneThisWeek && (
           <Card className="border-flag-line bg-flag-bg">
