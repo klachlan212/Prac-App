@@ -1,6 +1,7 @@
 import { createClient } from '@/src/auth/client'
 import { db } from '@/src/db/schema'
 import type { LocalReflection, LocalPlacement, LocalProfile } from '@/src/db/schema'
+import { getSkillLibrary } from '@/src/data/skills'
 
 // The sync engine mirrors local-first writes to Postgres and pulls server
 // state back. Single-author per user, so we use last-write-wins on updated_at
@@ -52,6 +53,10 @@ async function pushReflection(supabase: SB, id: string): Promise<void> {
     placement_id: r.placementId,
     user_id: r.userId,
     body: r.body,
+    what_happened: r.whatHappened ?? null,
+    so_what: r.soWhat ?? null,
+    now_what: r.nowWhat ?? null,
+    status: r.status,
     reflected_on: r.reflectedOn,
     updated_at: r.updatedAt,
     deleted_at: r.deletedAt ?? null,
@@ -81,6 +86,37 @@ async function pushReflection(supabase: SB, id: string): Promise<void> {
     }))
     const { error: tErr } = await supabase.from('reflection_tags').insert(rows)
     if (tErr) throw tErr
+  }
+
+  // Replace logged skills (reflection-scoped) for this reflection.
+  await supabase.from('skills_logged').delete().eq('reflection_id', r.id)
+  if (r.skills.length > 0) {
+    const rows = r.skills.map((s) => ({
+      id: s.id,
+      user_id: r.userId,
+      reflection_id: r.id,
+      skill_id: s.skillId ?? null,
+      raw_text: s.rawText ?? null,
+      status: s.status,
+      updated_at: r.updatedAt,
+    }))
+    const { error: kErr } = await supabase.from('skills_logged').insert(rows)
+    if (kErr) throw kErr
+  }
+
+  // Replace identifier flags for this reflection (the "to review" state persists).
+  await supabase.from('identifier_flags').delete().eq('reflection_id', r.id)
+  if (r.identifierFlags.length > 0) {
+    const rows = r.identifierFlags.map((f) => ({
+      id: f.id,
+      user_id: r.userId,
+      reflection_id: r.id,
+      label: f.label,
+      kind: f.kind,
+      status: f.status,
+    }))
+    const { error: fErr } = await supabase.from('identifier_flags').insert(rows)
+    if (fErr) throw fErr
   }
 
   await db.reflections.update(id, { synced: 1 })
@@ -138,7 +174,9 @@ export async function pull(userId: string): Promise<void> {
 
   const { data: reflections } = await supabase
     .from('reflections')
-    .select('*, reflection_standards(standard_id), reflection_tags(label, kind, source)')
+    .select(
+      '*, reflection_standards(standard_id, item_code), reflection_tags(label, kind, source), skills_logged(id, skill_id, raw_text, status), identifier_flags(id, label, kind, status)'
+    )
     .eq('user_id', userId)
   for (const r of reflections ?? []) {
     await mergeReflection(r)
@@ -166,17 +204,47 @@ async function mergePlacement(p: any): Promise<void> {
 async function mergeReflection(r: any): Promise<void> {
   const local = await db.reflections.get(r.id)
   if (local && local.updatedAt >= r.updated_at && local.synced === 1) return
+
+  // Resolve skill names/standards from the (cached) library for display.
+  const lib = await getSkillLibrary()
+  const byId = new Map(lib.map((s) => [s.id, s]))
+
   await db.reflections.put({
     id: r.id,
     placementId: r.placement_id,
     userId: r.user_id,
-    body: r.body,
+    body: r.body ?? '',
+    whatHappened: r.what_happened ?? undefined,
+    soWhat: r.so_what ?? undefined,
+    nowWhat: r.now_what ?? undefined,
+    status: r.status ?? 'saved',
     reflectedOn: r.reflected_on,
     standardIds: (r.reflection_standards ?? []).map((s: any) => s.standard_id),
+    itemCodes: (r.reflection_standards ?? [])
+      .map((s: any) => s.item_code)
+      .filter((c: any): c is string => !!c),
     tags: (r.reflection_tags ?? []).map((t: any) => ({
       label: t.label,
       kind: t.kind,
       source: t.source,
+    })),
+    skills: (r.skills_logged ?? []).map((k: any) => {
+      const entry = k.skill_id ? byId.get(k.skill_id) : undefined
+      return {
+        id: k.id,
+        skillId: k.skill_id ?? undefined,
+        rawText: k.raw_text ?? undefined,
+        name: entry?.name ?? k.raw_text ?? 'Skill',
+        status: k.status,
+        standardIds: entry?.standardIds ?? [],
+        itemCodes: entry?.itemCodes ?? [],
+      }
+    }),
+    identifierFlags: (r.identifier_flags ?? []).map((f: any) => ({
+      id: f.id,
+      label: f.label,
+      kind: f.kind,
+      status: f.status,
     })),
     createdAt: r.created_at,
     updatedAt: r.updated_at,
