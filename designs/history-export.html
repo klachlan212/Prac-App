@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prac. — History &amp; export</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#4ecdc4; --teal-deep:#16857c; --teal-ink:#0e2725;
+    --ink-soft:#4a5d5b; --ink-faint:#8aa09d;
+    --paper:#f6f4ef; --surface:#ffffff; --line:#e7e3da; --line-soft:#eef0ec;
+    --renew:#6b7f8c; --renew-bg:#eef2f4; --new-bg:#e3f7f4;
+    --flag:#c97a2b; --flag-bg:#fbeede; --flag-line:#ecd2b0;
+    --shadow:0 18px 50px -22px rgba(14,39,37,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 12% -8%, #eef9f7 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #f0efe7 0%, transparent 55%),
+      #efece4;
+    font-family:"DM Sans",system-ui,sans-serif;color:var(--teal-ink);
+    -webkit-font-smoothing:antialiased;padding:56px 28px 90px;
+  }
+  .masthead{max-width:1180px;margin:0 auto 46px;}
+  .wordmark{font-family:"Fraunces",serif;font-weight:600;font-size:34px;letter-spacing:-.01em;display:flex;align-items:baseline;}
+  .wordmark .dot{color:var(--teal);}
+  .masthead h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(28px,4vw,46px);line-height:1.04;letter-spacing:-.02em;margin:18px 0 14px;max-width:20ch;}
+  .masthead p{font-size:16px;line-height:1.6;color:var(--ink-soft);max-width:66ch;margin:0;}
+  .flowline{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px;font-family:"DM Mono",monospace;font-size:12.5px;color:var(--teal-deep);text-transform:uppercase;letter-spacing:.08em;}
+  .flowline .step{background:#fff;border:1px solid var(--line);padding:7px 12px;border-radius:999px;}
+  .flowline .arr{color:var(--ink-faint);}
+  .flowline .gate{color:var(--flag);border-color:var(--flag-line);background:var(--flag-bg);}
+
+  .gallery{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px 34px;align-items:start;}
+  .cell{display:flex;flex-direction:column;gap:16px;}
+  .cell-head{padding-left:4px;}
+  .cell-num{font-family:"DM Mono",monospace;font-size:12px;color:var(--teal-deep);letter-spacing:.12em;text-transform:uppercase;}
+  .cell-num.gate{color:var(--flag);}
+  .cell-title{font-family:"Fraunces",serif;font-weight:600;font-size:21px;letter-spacing:-.01em;margin:3px 0 6px;}
+  .cell-note{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin:0;}
+  .cell-note b{color:var(--teal-ink);font-weight:600;}
+
+  .phone{width:312px;max-width:100%;margin:0 auto;background:#0e2725;border-radius:42px;padding:9px;box-shadow:var(--shadow);}
+  .screen{background:var(--paper);border-radius:34px;overflow:hidden;height:640px;display:flex;flex-direction:column;position:relative;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:13px 22px 4px;font-size:12px;font-weight:600;color:var(--teal-ink);}
+  .statusbar .pill{width:15px;height:8px;border:1.5px solid var(--teal-ink);border-radius:3px;opacity:.7;}
+  .appbar{display:flex;align-items:center;gap:10px;padding:6px 20px 12px;}
+  .appbar .back{font-size:22px;color:var(--teal-ink);line-height:1;width:24px;}
+  .appbar .crumb{font-family:"DM Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+  .appbar .act{margin-left:auto;font-size:13px;font-weight:600;color:var(--teal-deep);}
+  .body{flex:1;overflow:hidden;padding:2px 20px 0;}
+  .footer{padding:14px 20px 22px;background:linear-gradient(180deg,transparent,var(--paper) 32%);}
+  .btn{width:100%;border:none;border-radius:16px;padding:16px;font-family:"DM Sans",sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-primary{background:var(--teal);color:#06302c;}
+  .btn-primary .dot{color:#06302c;}
+  .btn-flag{background:var(--flag);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--teal-deep);font-weight:600;padding:12px;font-size:14px;}
+  .btn-quiet{background:var(--surface);border:1px solid var(--line);color:var(--teal-ink);}
+  .btn[disabled]{background:#dfe5e3;color:var(--ink-faint);cursor:not-allowed;}
+
+  .eyebrow{font-family:"DM Mono",monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-deep);margin:0 0 8px;}
+  .h-row{display:flex;align-items:flex-end;justify-content:space-between;margin:4px 0 14px;}
+  .h-row .ht{font-family:"Fraunces",serif;font-weight:600;font-size:24px;letter-spacing:-.02em;}
+  .h-row .ht .dot{color:var(--teal);}
+  .h-row .hsub{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.04em;}
+
+  /* search + filter */
+  .toolbar{display:flex;gap:9px;margin-bottom:14px;}
+  .search{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 13px 11px 36px;font-size:13.5px;color:var(--ink-faint);position:relative;}
+  .search .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;}
+  .filter-btn{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:0 14px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--teal-ink);}
+  .filter-btn .n{background:var(--teal);color:#06302c;font-size:10px;border-radius:6px;padding:1px 5px;}
+
+  /* history list */
+  .hrow{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px 14px;margin-bottom:10px;}
+  .hrow .top{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;}
+  .hrow .date{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.04em;}
+  .hrow .stds{margin-left:auto;display:flex;gap:4px;}
+  .hrow .std{font-family:"DM Mono",monospace;font-size:10px;font-weight:500;color:var(--teal-deep);background:var(--new-bg);border-radius:5px;padding:2px 6px;}
+  .hrow .summ{font-size:14px;font-weight:500;line-height:1.3;}
+  .hrow .meta{display:flex;align-items:center;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-soft);}
+  .hrow .meta .dotm{width:4px;height:4px;border-radius:50%;background:var(--line);}
+  .hrow .review-pill{display:inline-flex;align-items:center;gap:5px;color:var(--flag);font-weight:600;}
+  .hrow .review-pill .bd{width:7px;height:7px;border-radius:50%;background:var(--flag);}
+
+  /* filter sheet */
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 34px 34px;box-shadow:0 -16px 40px -20px rgba(14,39,37,.4);padding:10px 22px 22px;border:1px solid var(--line);border-bottom:none;}
+  .grab{width:38px;height:4px;border-radius:3px;background:var(--line);margin:4px auto 16px;}
+  .sheet h3{font-family:"Fraunces",serif;font-weight:600;font-size:20px;margin:0 0 16px;letter-spacing:-.01em;}
+  .fl-label{font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin:0 0 9px;}
+  .fl-group{margin-bottom:18px;}
+  .fl-chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .fchip{border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:500;color:var(--ink-soft);background:#fff;}
+  .fchip.on{background:var(--new-bg);border-color:var(--teal);color:var(--teal-deep);}
+  .scrim{position:absolute;inset:0;background:rgba(14,39,37,.28);}
+
+  /* detail */
+  .d-block{margin-bottom:16px;}
+  .d-q{font-family:"Fraunces",serif;font-weight:600;font-size:15px;display:flex;align-items:baseline;gap:7px;margin-bottom:5px;}
+  .d-q .dot{color:var(--teal);}
+  .d-text{font-size:13.5px;line-height:1.6;color:var(--ink-soft);}
+  .ident{background:var(--flag-bg);border-bottom:1.5px solid var(--flag);color:var(--flag);font-weight:600;border-radius:3px;padding:0 2px;}
+  .d-skills{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+  .d-skill{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12px;font-weight:500;display:flex;gap:6px;align-items:center;}
+  .d-skill .tag{font-size:9.5px;font-weight:600;padding:2px 5px;border-radius:5px;background:var(--new-bg);color:var(--teal-deep);}
+  .inline-flag{display:flex;gap:8px;align-items:flex-start;background:var(--flag-bg);border:1px solid var(--flag-line);border-radius:11px;padding:10px 12px;margin-top:6px;font-size:12px;line-height:1.45;color:#8a531f;}
+  .inline-flag .ic{color:var(--flag);font-weight:700;}
+
+  /* export scope */
+  .radio-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+  .radio-card.on{border:1.5px solid var(--teal);background:var(--new-bg);}
+  .radio-card .ring{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;position:relative;}
+  .radio-card.on .ring{border-color:var(--teal);}
+  .radio-card.on .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--teal);}
+  .radio-card .rt{font-size:14px;font-weight:600;}
+  .radio-card .rs{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .honest{background:#fff;border:1px solid var(--line);border-left:3px solid var(--ink-faint);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.5;color:var(--ink-soft);margin-top:6px;}
+  .honest b{color:var(--teal-ink);}
+
+  /* de-id review (hero) */
+  .gate-head{background:var(--flag-bg);margin:-2px -20px 14px;padding:16px 20px 14px;border-bottom:1px solid var(--flag-line);}
+  .gate-head .ge{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--flag);margin-bottom:6px;}
+  .gate-head .gt{font-family:"Fraunces",serif;font-weight:600;font-size:20px;line-height:1.15;letter-spacing:-.01em;color:#7a4a18;}
+  .gate-prog{display:flex;gap:6px;align-items:center;margin-top:12px;}
+  .gate-prog i{flex:1;height:5px;border-radius:3px;background:#ecd9bf;}
+  .gate-prog i.done{background:var(--flag);}
+  .gate-prog i.on{background:var(--flag);opacity:.55;}
+  .gate-prog span{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--flag);letter-spacing:.05em;}
+
+  .flag-card{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:15px;}
+  .flag-card .ctx{font-size:13.5px;line-height:1.65;color:var(--ink-soft);}
+  .flag-card .why{font-size:11.5px;color:var(--flag);font-weight:600;margin-top:10px;display:flex;align-items:center;gap:6px;}
+  .fix-opts{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .fix{border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:13.5px;display:flex;align-items:center;gap:10px;}
+  .fix.rec{border:1.5px solid var(--teal);background:var(--new-bg);}
+  .fix .swap{font-family:"DM Mono",monospace;font-size:11px;color:var(--teal-deep);margin-left:auto;}
+  .fix .lead{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--line);flex-shrink:0;}
+  .fix.rec .lead{background:var(--teal);border-color:var(--teal);}
+  .fix.dismiss{color:var(--ink-soft);}
+  .gate-foot{font-size:11.5px;line-height:1.5;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-top:14px;display:flex;gap:8px;}
+  .gate-foot .ic{color:var(--ink-faint);}
+  .gate-foot b{color:var(--teal-ink);}
+
+  /* done */
+  .center{flex:1;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:26px 28px 0;}
+  .mark{width:70px;height:70px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+  .mark .tk{font-size:32px;color:#06302c;font-weight:700;}
+  .center h2{font-family:"Fraunces",serif;font-weight:600;font-size:26px;letter-spacing:-.02em;margin:0 0 9px;}
+  .center h2 .dot{color:var(--teal);}
+  .center p{font-size:14px;line-height:1.55;color:var(--ink-soft);margin:0 0 4px;max-width:32ch;}
+  .filecard{align-self:stretch;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin:22px 0 10px;display:flex;align-items:center;gap:12px;text-align:left;}
+  .filecard .fi{width:38px;height:46px;border-radius:7px;background:var(--new-bg);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-family:"DM Mono",monospace;font-size:10px;font-weight:500;flex-shrink:0;}
+  .filecard .fn{font-size:13.5px;font-weight:600;}
+  .filecard .fm{font-size:11px;color:var(--ink-faint);margin-top:2px;font-family:"DM Mono",monospace;}
+  .resp-note{align-self:stretch;background:var(--flag-bg);border:1px solid var(--flag-line);border-radius:11px;padding:11px 13px;font-size:11.5px;line-height:1.5;color:#8a531f;text-align:left;display:flex;gap:8px;}
+  .resp-note .ic{color:var(--flag);font-weight:700;}
+
+  .annot{font-size:12.5px;line-height:1.55;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:10px;padding:11px 13px;}
+  .annot.gate{border-left-color:var(--flag);}
+  .annot b{color:var(--teal-ink);}
+
+  footer.page{max-width:1180px;margin:70px auto 0;border-top:1px solid var(--line);padding-top:24px;font-size:13px;color:var(--ink-soft);line-height:1.6;}
+  footer.page b{color:var(--teal-ink);font-weight:600;}
+
+  @media (max-width:560px){body{padding:32px 16px 60px;}.gallery{gap:34px 20px;}}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wordmark">Prac<span class="dot">.</span></div>
+  <h1>Your record, and getting it out safely.</h1>
+  <p>A filterable history of everything logged, and an export framed as a student-owned reflective record — not assessment evidence. The export runs through an identifier-review gate the student can't skip. On-device for v1: nothing leaves the phone, and the copy never claims the text is “safe” — only that common identifiers were flagged for review.</p>
+  <div class="flowline">
+    <span class="step">History</span><span class="arr">→</span>
+    <span class="step">Filter</span><span class="arr">→</span>
+    <span class="step">Reflection</span><span class="arr">→</span>
+    <span class="step">Export scope</span><span class="arr">→</span>
+    <span class="step gate">⚑ Identifier review</span><span class="arr">→</span>
+    <span class="step">Record ready</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- 1. HISTORY -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">01 · History</div>
+      <div class="cell-title">The payoff surface — honestly framed</div>
+      <p class="cell-note">Browse, search, filter by standard. An amber <b>to review</b> pill marks any reflection still carrying an unresolved identifier flag — confidentiality is visible <i>before</i> export, not only at it.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:51</span><span class="pill"></span></div>
+      <div class="appbar"><div class="wordmark" style="font-size:20px;">Prac<span class="dot">.</span></div><span class="act">Export</span></div>
+      <div class="body">
+        <div class="h-row"><span class="ht">Your reflections<span class="dot">.</span></span><span class="hsub">31 · 6 of 7 std</span></div>
+        <div class="toolbar">
+          <div class="search"><span class="mag">⌕</span>Search reflections</div>
+          <div class="filter-btn">Filter <span class="n">2</span></div>
+        </div>
+        <div class="hrow">
+          <div class="top"><span class="date">12 JUN</span><div class="stds"><span class="std">2</span><span class="std">4</span></div></div>
+          <div class="summ">Distressed patient during a dressing change</div>
+          <div class="meta"><span>2 skills</span><span class="dotm"></span><span class="review-pill"><span class="bd"></span>1 to review</span></div>
+        </div>
+        <div class="hrow">
+          <div class="top"><span class="date">11 JUN</span><div class="stds"><span class="std">4</span></div></div>
+          <div class="summ">Medication round — double-checking with my RN</div>
+          <div class="meta"><span>3 skills</span><span class="dotm"></span><span>Renewed ×2</span></div>
+        </div>
+        <div class="hrow">
+          <div class="top"><span class="date">09 JUN</span><div class="stds"><span class="std">1</span><span class="std">6</span></div></div>
+          <div class="summ">Spotted a deteriorating obs trend before handover</div>
+          <div class="meta"><span>1 skill</span><span class="dotm"></span><span>New</span></div>
+        </div>
+      </div>
+      <div class="footer"><button class="btn btn-primary">Export my record →</button></div>
+    </div></div>
+    <div class="annot"><b>Coverage is shown, not chased:</b> “6 of 7 std” sits as a quiet stat, never as the list’s organising frame — so students don’t log skills to fill a grid (the Goodhart trap from earlier).</div>
+  </div>
+
+  <!-- 2. FILTER -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">02 · Filter</div>
+      <div class="cell-title">Bottom sheet, thumb-reachable</div>
+      <p class="cell-note">Filter by ANSAT standard, skill type, or recency. Everything sits in the lower half of the screen for one-handed use.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:51</span><span class="pill"></span></div>
+      <div class="appbar"><div class="wordmark" style="font-size:20px;">Prac<span class="dot">.</span></div><span class="act">Export</span></div>
+      <div class="body" style="filter:blur(.4px);opacity:.5;">
+        <div class="h-row"><span class="ht">Your reflections<span class="dot">.</span></span><span class="hsub">31 · 6 of 7 std</span></div>
+        <div class="hrow"><div class="summ">Distressed patient during a dressing change</div></div>
+        <div class="hrow"><div class="summ">Medication round — double-checking</div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <h3>Filter</h3>
+        <div class="fl-group">
+          <p class="fl-label">ANSAT standard</p>
+          <div class="fl-chips">
+            <span class="fchip">1</span><span class="fchip on">2</span><span class="fchip">3</span>
+            <span class="fchip on">4</span><span class="fchip">5</span><span class="fchip">6</span><span class="fchip">7</span>
+          </div>
+        </div>
+        <div class="fl-group">
+          <p class="fl-label">Skill</p>
+          <div class="fl-chips"><span class="fchip">New</span><span class="fchip">Renewed</span></div>
+        </div>
+        <div class="fl-group" style="margin-bottom:14px;">
+          <p class="fl-label">When</p>
+          <div class="fl-chips"><span class="fchip on">This placement</span><span class="fchip">All time</span></div>
+        </div>
+        <button class="btn btn-primary">Show 12 reflections</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>Standard is the primary filter</b> because it’s how a student checks “where am I thin?” — the one self-assessment question the history can honestly answer.</div>
+  </div>
+
+  <!-- 3. DETAIL -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">03 · Reflection detail</div>
+      <div class="cell-title">The flag persists at rest</div>
+      <p class="cell-note">A read view of one reflection. The identifier flagged during writing stays visibly marked here — so it’s caught in normal browsing, long before export.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:52</span><span class="pill"></span></div>
+      <div class="appbar"><span class="back">←</span><span class="crumb">12 Jun · Std 2 · 4</span><span class="act">Edit</span></div>
+      <div class="body">
+        <div class="d-block">
+          <div class="d-q"><span class="dot">.</span>What happened?</div>
+          <div class="d-text">An elderly patient — <span class="ident">Mrs K</span> — became distressed during a dressing change. I rushed it and she pulled away, so I stopped and started over more slowly.</div>
+          <div class="inline-flag"><span class="ic">⚑</span><span><b style="color:#7a4a18;">A name could identify someone.</b> Try “the patient” or a single initial. We’ll ask again before you export.</span></div>
+        </div>
+        <div class="d-block">
+          <div class="d-q"><span class="dot">.</span>So what?</div>
+          <div class="d-text">I learned that slowing down and explaining each step kept her calmer. Rushing made it worse for both of us.</div>
+        </div>
+        <div class="d-block">
+          <div class="d-q"><span class="dot">.</span>Skills</div>
+          <div class="d-skills">
+            <span class="d-skill">De-escalation <span class="tag">New</span></span>
+            <span class="d-skill">Person-centred care <span class="tag" style="background:var(--renew-bg);color:var(--renew);">Renew</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><button class="btn btn-quiet">Add to export</button></div>
+    </div></div>
+    <div class="annot"><b>The nudge coaches, it doesn’t block:</b> the student can leave “Mrs K” in their private record — but it’s marked, and the export gate will force a decision before anything can leave the phone.</div>
+  </div>
+
+  <!-- 4. EXPORT SCOPE -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">04 · Export scope</div>
+      <div class="cell-title">Choose what, and say what it is</div>
+      <p class="cell-note">The honesty note does load-bearing work: this is named a <b>reflective record</b>, explicitly <b>not</b> a competency assessment. The button leads to the check, not straight to a file.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:52</span><span class="pill"></span></div>
+      <div class="appbar"><span class="back">←</span><span class="crumb">Export</span></div>
+      <div class="body">
+        <p class="eyebrow">What to include</p>
+        <div class="radio-card on"><span class="ring"></span><div><div class="rt">Everything</div><div class="rs">All 31 reflections, this placement</div></div></div>
+        <div class="radio-card"><span class="ring"></span><div><div class="rt">Current filter</div><div class="rs">Standards 2 &amp; 4 — 12 reflections</div></div></div>
+        <div class="radio-card"><span class="ring"></span><div><div class="rt">Pick a date range</div><div class="rs">Choose start and end</div></div></div>
+        <div class="honest">
+          This exports as a PDF you keep on your phone — <b>your reflective record.</b> It’s a record of your learning, not a competency assessment or proof of practice.
+        </div>
+      </div>
+      <div class="footer"><button class="btn btn-primary">Check for identifiers →</button></div>
+    </div></div>
+    <div class="annot"><b>The button is the tell:</b> it says “Check for identifiers,” not “Export.” You can’t reach a file without passing through the gate — the control is structural, not optional.</div>
+  </div>
+
+  <!-- 5. DE-ID GATE (HERO) -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num gate">05 · Identifier review — the gate</div>
+      <div class="cell-title">One flag at a time, can't skip</div>
+      <p class="cell-note">The load-bearing screen. Each flagged span is shown in context with a suggested replacement. The student must act on every flag — fix or explicitly dismiss — before a file can be generated.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:53</span><span class="pill"></span></div>
+      <div class="appbar"><span class="back">←</span><span class="crumb">Identifier review</span></div>
+      <div class="body">
+        <div class="gate-head">
+          <div class="ge">⚑ Before this leaves your phone</div>
+          <div class="gt">4 details could identify someone. Let’s fix them.</div>
+          <div class="gate-prog"><i class="done"></i><i class="on"></i><i></i><i></i><span>1 / 4</span></div>
+        </div>
+        <div class="flag-card">
+          <div class="ctx">“An elderly patient — <span class="ident">Mrs K</span> — became distressed during a dressing change…”</div>
+          <div class="why">⚑ Looks like a patient’s name</div>
+          <div class="fix-opts">
+            <div class="fix rec"><span class="lead"></span>Replace with “the patient”<span class="swap">Mrs K →</span></div>
+            <div class="fix"><span class="lead"></span>Use initial only<span class="swap">→ K.</span></div>
+            <div class="fix dismiss"><span class="lead"></span>Not an identifier — keep it</div>
+          </div>
+        </div>
+        <div class="gate-foot"><span class="ic">ℹ</span><span><b>Prac. catches common identifiers</b> — names, ages, bed and room numbers, dates. It won’t catch everything. What’s left is yours to check before you share.</span></div>
+      </div>
+      <div class="footer"><button class="btn btn-flag">Apply &amp; next — 3 left</button></div>
+    </div></div>
+    <div class="annot gate"><b>This screen is the entire confidentiality argument made physical.</b> It never says “safe” or “de-identified.” It coaches, forces a human decision on every flag, and states plainly that the checker is fallible — so the credibility claim is one a CNF can’t puncture.</div>
+  </div>
+
+  <!-- 6. DONE -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">06 · Record ready</div>
+      <div class="cell-title">No “safe” claim, ownership explicit</div>
+      <p class="cell-note">The file is generated on-device. The confirmation reports what was fixed and hands responsibility for the rest back to the student, in plain words.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>8:54</span><span class="pill"></span></div>
+      <div class="appbar"><span style="width:24px;"></span><span class="crumb" style="margin:0 auto;">Prac.</span><span style="width:24px;"></span></div>
+      <div class="body">
+        <div class="center">
+          <div class="mark"><span class="tk">✓</span></div>
+          <h2>Record ready<span class="dot">.</span></h2>
+          <p>31 reflections · 4 identifiers fixed before export.</p>
+          <div class="filecard">
+            <span class="fi">PDF</span>
+            <div><div class="fn">Prac-reflective-record.pdf</div><div class="fm">31 reflections · 8.2 MB</div></div>
+          </div>
+          <div class="resp-note"><span class="ic">⚑</span><span>Checked for common identifiers. <b style="color:#7a4a18;">Anything we missed is yours to catch</b> before you send this to anyone.</span></div>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-primary">Save to phone</button>
+        <button class="btn btn-ghost" style="margin-top:2px;">Share…</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>“4 identifiers fixed,” not “de-identified.”</b> The number is concrete and honest; the warning sits on the success screen precisely where confidence is highest and a breach is most likely.</div>
+  </div>
+
+</div>
+
+<footer class="page">
+  <p><b>What this build commits to.</b> Export is a student-owned reflective record, never framed as assessment evidence. The identifier check is a mandatory gate between “choose scope” and “file exists” — structural, not a setting. Every flag forces a human decision (fix or dismiss); the copy stays in coaching register and never asserts the text is safe or de-identified. Flags raised while writing persist in the history and detail views, so confidentiality is a running habit, not a final hurdle. All of it runs on-device for v1 — no clinical text leaves the phone.</p>
+  <p style="margin-top:10px;"><b>The honest limits of v1, on the record.</b> A client-side heuristic has real recall gaps: it will miss unstructured identifiers (“the only patient of X background that week,” rare presentations, indirect references). The design mitigates this by refusing to claim completeness and by forcing review — but the residual risk is real, and the share step is outside the app’s control entirely. If you ever want higher recall, that means a model with better language understanding, which reopens the “does text leave the device” question you’ve closed for v1.</p>
+  <p style="margin-top:10px;"><b>Still unbuilt, and still the bigger lever.</b> None of this answers whether students finish the core flow twice. A working export for a corpus nobody’s filling is polish on an empty record — the completion test still outranks everything here.</p>
+</footer>
+
+</body>
+</html>

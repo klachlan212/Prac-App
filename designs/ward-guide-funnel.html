@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prac. — Ward guide funnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#4ecdc4; --teal-deep:#16857c; --teal-ink:#0e2725;
+    --ink-soft:#4a5d5b; --ink-faint:#8aa09d;
+    --paper:#f6f4ef; --surface:#ffffff; --line:#e7e3da; --line-soft:#eef0ec;
+    --renew:#6b7f8c; --renew-bg:#eef2f4; --new-bg:#e3f7f4;
+    --plum:#7a5c8e; --plum-bg:#f1ebf4;
+    --shadow:0 18px 50px -22px rgba(14,39,37,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 12% -8%, #eef9f7 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #f0efe7 0%, transparent 55%),
+      #efece4;
+    font-family:"DM Sans",system-ui,sans-serif;color:var(--teal-ink);
+    -webkit-font-smoothing:antialiased;padding:56px 28px 90px;
+  }
+  .masthead{max-width:1180px;margin:0 auto 46px;}
+  .wordmark{font-family:"Fraunces",serif;font-weight:600;font-size:34px;letter-spacing:-.01em;display:flex;align-items:baseline;}
+  .wordmark .dot{color:var(--teal);}
+  .masthead h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(28px,4vw,46px);line-height:1.04;letter-spacing:-.02em;margin:18px 0 14px;max-width:22ch;}
+  .masthead p{font-size:16px;line-height:1.6;color:var(--ink-soft);max-width:66ch;margin:0;}
+  .funnel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px;font-family:"DM Mono",monospace;font-size:12.5px;color:var(--teal-deep);text-transform:uppercase;letter-spacing:.08em;}
+  .funnel .step{background:#fff;border:1px solid var(--line);padding:7px 12px;border-radius:999px;}
+  .funnel .arr{color:var(--ink-faint);}
+  .funnel .conv{color:var(--plum);border-color:#ddd0e6;background:var(--plum-bg);}
+
+  .gallery{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px 34px;align-items:start;}
+  .cell{display:flex;flex-direction:column;gap:16px;}
+  .cell-head{padding-left:4px;}
+  .cell-num{font-family:"DM Mono",monospace;font-size:12px;color:var(--teal-deep);letter-spacing:.12em;text-transform:uppercase;}
+  .cell-num.conv{color:var(--plum);}
+  .cell-title{font-family:"Fraunces",serif;font-weight:600;font-size:21px;letter-spacing:-.01em;margin:3px 0 6px;}
+  .cell-note{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin:0;}
+  .cell-note b{color:var(--teal-ink);font-weight:600;}
+
+  .phone{width:312px;max-width:100%;margin:0 auto;background:#0e2725;border-radius:42px;padding:9px;box-shadow:var(--shadow);}
+  .screen{background:var(--paper);border-radius:34px;overflow:hidden;height:648px;display:flex;flex-direction:column;position:relative;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:13px 22px 4px;font-size:12px;font-weight:600;color:var(--teal-ink);}
+  .statusbar .pill{width:15px;height:8px;border:1.5px solid var(--teal-ink);border-radius:3px;opacity:.7;}
+
+  /* browser chrome for the public web surfaces */
+  .urlbar{display:flex;align-items:center;gap:8px;margin:4px 14px 0;background:#fff;border:1px solid var(--line);border-radius:11px;padding:8px 12px;font-size:11.5px;color:var(--ink-soft);font-family:"DM Mono",monospace;}
+  .urlbar .lock{color:var(--teal-deep);}
+  .urlbar .u{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+
+  .appbar{display:flex;align-items:center;gap:10px;padding:6px 20px 12px;}
+  .appbar .back{font-size:22px;color:var(--teal-ink);line-height:1;width:24px;}
+  .appbar .crumb{font-family:"DM Mono",monospace;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+
+  .body{flex:1;overflow:hidden;padding:14px 22px 0;}
+  .footer{padding:14px 20px 22px;background:linear-gradient(180deg,transparent,var(--paper) 32%);}
+  .btn{width:100%;border:none;border-radius:16px;padding:15px;font-family:"DM Sans",sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-primary{background:var(--teal);color:#06302c;}
+  .btn-primary .dot{color:#06302c;}
+  .btn-quiet{background:var(--surface);border:1px solid var(--line);color:var(--teal-ink);}
+  .btn-ghost{background:transparent;color:var(--teal-deep);font-weight:600;padding:11px;font-size:13.5px;}
+
+  /* public guide hero */
+  .kicker{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .kicker .heart{color:var(--teal);}
+  .hero-h{font-family:"Fraunces",serif;font-weight:600;font-size:30px;line-height:1.08;letter-spacing:-.02em;margin:0 0 12px;}
+  .hero-h .dot{color:var(--teal);}
+  .hero-p{font-size:14.5px;line-height:1.6;color:var(--ink-soft);margin:0 0 18px;}
+  .byline{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 13px;}
+  .byline .av{width:34px;height:34px;border-radius:50%;background:var(--new-bg);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-family:"Fraunces",serif;font-weight:600;font-size:15px;flex-shrink:0;}
+  .byline .bt{font-size:12.5px;line-height:1.35;}
+  .byline .bt b{font-weight:600;}
+  .byline .bt span{color:var(--ink-faint);}
+  .toc{margin-top:18px;}
+  .toc-label{font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;}
+  .toc-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line-soft);font-size:13.5px;}
+  .toc-row .tn{font-family:"DM Mono",monospace;font-size:11px;color:var(--teal-deep);width:20px;}
+  .toc-row .chev{margin-left:auto;color:var(--ink-faint);}
+  .free-tag{display:inline-flex;align-items:center;gap:6px;background:var(--new-bg);color:var(--teal-deep);font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;}
+
+  /* guide body cards */
+  .sec-eyebrow{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-deep);margin:0 0 7px;}
+  .sec-h{font-family:"Fraunces",serif;font-weight:600;font-size:20px;letter-spacing:-.01em;margin:0 0 9px;line-height:1.15;}
+  .sec-p{font-size:13.5px;line-height:1.6;color:var(--ink-soft);margin:0 0 16px;}
+  .skill-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:11px;}
+  .skill-card .si{width:28px;height:28px;border-radius:8px;background:var(--new-bg);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .skill-card .sn{font-size:13.5px;font-weight:500;flex:1;line-height:1.25;}
+  .skill-card .std{font-family:"DM Mono",monospace;font-size:10px;color:var(--teal-deep);background:var(--new-bg);border-radius:5px;padding:2px 6px;}
+  .reflect-card{background:var(--plum-bg);border:1px solid #e2d6ea;border-radius:14px;padding:13px 14px;margin-bottom:9px;}
+  .reflect-card .rq{font-family:"Fraunces",serif;font-weight:500;font-size:14.5px;line-height:1.35;color:#4f3a60;font-style:italic;}
+  .tie{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:6px;}
+  .tie .tt{font-size:13.5px;font-weight:600;display:flex;align-items:baseline;gap:7px;margin-bottom:5px;}
+  .tie .tt .dot{color:var(--teal);}
+  .tie .tp{font-size:12.5px;line-height:1.5;color:var(--ink-soft);}
+  .disclaimer{font-size:11px;line-height:1.5;color:var(--ink-faint);margin-top:14px;padding-left:4px;border-left:2px solid var(--line);padding:2px 0 2px 10px;}
+
+  /* conversion */
+  .conv-screen{padding-top:6px;}
+  .conv-h{font-family:"Fraunces",serif;font-weight:600;font-size:25px;line-height:1.12;letter-spacing:-.02em;margin:6px 0 10px;}
+  .conv-h .dot{color:var(--teal);}
+  .conv-p{font-size:14px;line-height:1.55;color:var(--ink-soft);margin:0 0 18px;}
+  .val-row{display:flex;gap:11px;align-items:flex-start;margin-bottom:13px;}
+  .val-row .vk{width:24px;height:24px;border-radius:7px;background:var(--new-bg);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;}
+  .val-row .vt{font-size:13px;line-height:1.45;color:var(--ink-soft);}
+  .val-row .vt b{color:var(--teal-ink);font-weight:600;}
+  .email{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px;font-size:13.5px;color:var(--ink-faint);margin:18px 0 10px;}
+  .reassure{text-align:center;font-size:11.5px;color:var(--ink-faint);margin-top:10px;line-height:1.45;}
+
+  /* in-app priming */
+  .prime-banner{background:linear-gradient(135deg,#e3f7f4,#eaf0ef);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:16px;}
+  .prime-banner .pe{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:6px;}
+  .prime-banner .ph{font-family:"Fraunces",serif;font-weight:600;font-size:18px;line-height:1.2;letter-spacing:-.01em;margin-bottom:4px;}
+  .prime-banner .pp{font-size:12.5px;line-height:1.5;color:var(--ink-soft);}
+  .chiprow{display:flex;flex-wrap:wrap;gap:8px;}
+  .pchip{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:9px 11px;font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:7px;}
+  .pchip .add{color:var(--teal-deep);font-weight:700;}
+  .pchip .std{font-family:"DM Mono",monospace;font-size:9.5px;color:var(--teal-deep);background:var(--new-bg);border-radius:4px;padding:1px 4px;}
+  .blocklabel{font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 9px;}
+  .prime-prompt{background:var(--plum-bg);border:1px solid #e2d6ea;border-radius:13px;padding:12px 13px;font-family:"Fraunces",serif;font-style:italic;font-size:13.5px;line-height:1.35;color:#4f3a60;}
+
+  .annot{font-size:12.5px;line-height:1.55;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:10px;padding:11px 13px;}
+  .annot.conv{border-left-color:var(--plum);}
+  .annot b{color:var(--teal-ink);}
+
+  footer.page{max-width:1180px;margin:70px auto 0;border-top:1px solid var(--line);padding-top:24px;font-size:13px;color:var(--ink-soft);line-height:1.6;}
+  footer.page b{color:var(--teal-ink);font-weight:600;}
+
+  @media (max-width:560px){body{padding:32px 16px 60px;}.gallery{gap:34px 20px;}}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wordmark">Prac<span class="dot">.</span></div>
+  <h1>The ward guide as a funnel, not a library.</h1>
+  <p>A student Googling “cardiac placement nursing student” at 11pm, three days out and anxious, is the catch point. The free guide earns trust with texture — not clinical facts it can’t keep current — then offers the app as the upgrade. Inside the app, the same guide reappears to prime a real placement block. Content stays ungated; the value the app adds is doing something with it.</p>
+  <div class="funnel">
+    <span class="step">Search / shared link</span><span class="arr">→</span>
+    <span class="step">Free guide</span><span class="arr">→</span>
+    <span class="step conv">Soft conversion</span><span class="arr">→</span>
+    <span class="step">In-app priming</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- 1. DISCOVERY / LANDING -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">01 · The catch — public guide</div>
+      <div class="cell-title">Peer voice, free, credible byline</div>
+      <p class="cell-note">What a student lands on from search or a QUT SUN share. The byline carries your one real edge — <b>built by a nurse who worked the ward</b>. Content is free and visible; nothing is walled.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>11:02</span><span class="pill"></span></div>
+      <div class="urlbar"><span class="lock">🔒</span><span class="u">prac.app/guides/cardiac-placement</span></div>
+      <div class="body">
+        <div class="kicker"><span class="heart">♥</span> Ward guide · Cardiac</div>
+        <h1 class="hero-h">So you’ve got a cardiac placement<span class="dot">.</span></h1>
+        <p class="hero-p">Here’s what it actually feels like on the floor — the rhythm, the skills you’ll keep meeting, and the moments worth thinking twice about. From someone who’s been there.</p>
+        <div class="byline">
+          <span class="av">L</span>
+          <div class="bt"><b>Written by a registered nurse</b><br><span>Acute &amp; emergency background · not AI, not a textbook</span></div>
+        </div>
+        <div class="toc">
+          <div class="toc-label">In this guide · 4 min read</div>
+          <div class="toc-row"><span class="tn">01</span>What the days feel like<span class="chev">›</span></div>
+          <div class="toc-row"><span class="tn">02</span>Skills you’ll probably touch<span class="chev">›</span></div>
+          <div class="toc-row"><span class="tn">03</span>What’s worth reflecting on<span class="chev">›</span></div>
+          <div class="toc-row"><span class="tn">04</span>Walking in on day one<span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="footer"><button class="btn btn-primary">Read the guide — free<span class="dot">.</span></button></div>
+    </div></div>
+    <div class="annot"><b>The byline is the SEO differentiator made human.</b> Every competing result is a forum, a faceless content farm, or a textbook. “A real nurse who worked this ward” is the thing Google can’t rank around and the thing your brand already owns.</div>
+  </div>
+
+  <!-- 2. GUIDE BODY -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">02 · The body — texture, not facts</div>
+      <div class="cell-title">Skills + reflection prompts, scannable</div>
+      <p class="cell-note">Likely skills (mapped to standards, so the value chain to the app is visible) and reflection prompts in the same voice the product uses. No protocols, no clinical instruction — the boundary line stays in view.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>11:04</span><span class="pill"></span></div>
+      <div class="urlbar"><span class="lock">🔒</span><span class="u">prac.app/guides/cardiac-placement</span></div>
+      <div class="body">
+        <p class="sec-eyebrow">02 · Skills you’ll probably touch</p>
+        <p class="sec-p">You won’t do all of these, and you’ll do some a lot. Don’t aim to tick them off — just notice when they happen.</p>
+        <div class="skill-card"><span class="si">♥</span><span class="sn">Continuous cardiac monitoring (telemetry)</span><span class="std">Std 4</span></div>
+        <div class="skill-card"><span class="si">▢</span><span class="sn">Applying a 12-lead ECG</span><span class="std">Std 4</span></div>
+        <div class="skill-card"><span class="si">⤵</span><span class="sn">Fluid balance &amp; daily weights</span><span class="std">Std 4</span></div>
+        <div class="skill-card"><span class="si">◷</span><span class="sn">Recognising a patient who’s “off”</span><span class="std">Std 1</span></div>
+        <p class="sec-eyebrow" style="margin-top:18px;">03 · Worth reflecting on</p>
+        <div class="reflect-card"><div class="rq">“The first time a patient’s rhythm changed and you had to decide whether to escalate.”</div></div>
+        <div class="reflect-card"><div class="rq">“A conversation about lifestyle change that landed — or didn’t.”</div></div>
+        <p class="disclaimer">Written by a nurse who’s worked these wards. General guidance from experience — not clinical instruction. Always follow your facility’s protocols and your facilitator.</p>
+      </div>
+      <div class="footer"><button class="btn btn-quiet">Keep reading ↓</button></div>
+    </div></div>
+    <div class="annot"><b>This is the trap-avoidance, visible.</b> Nothing here is a fact that can go out of date or be wrong per facility — it’s experience and prompts. The standard tags quietly preview the capture loop without the guide becoming a product surface.</div>
+  </div>
+
+  <!-- 3. SOFT CONVERSION -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num conv">03 · Soft conversion</div>
+      <div class="cell-title">After the value, never before it</div>
+      <p class="cell-note">Sits at the <b>end</b> of the guide, once the student already got something free. The pitch is honest: the guide was the gift, the app is what makes it work <i>during</i> placement. No wall, no dark pattern.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>11:07</span><span class="pill"></span></div>
+      <div class="urlbar"><span class="lock">🔒</span><span class="u">prac.app/guides/cardiac-placement</span></div>
+      <div class="body conv-screen">
+        <span class="free-tag">✓ You just read the whole guide — free</span>
+        <h2 class="conv-h">Want it working <i>for</i> you on the ward?<span class="dot">.</span></h2>
+        <p class="conv-p">Prac. is a free app that turns this from reading into your own record:</p>
+        <div class="val-row"><span class="vk">＋</span><span class="vt">Those skills, <b>pre-loaded</b> and one tap to log as you do them</span></div>
+        <div class="val-row"><span class="vk">✎</span><span class="vt">Those prompts waiting for you at 9pm, mapped to <b>your ANSAT standards</b></span></div>
+        <div class="val-row"><span class="vk">▦</span><span class="vt">A reflective record that <b>builds across all 3 years</b>, not one ward</span></div>
+        <div class="email">your@student.email</div>
+        <button class="btn btn-primary" style="margin-top:2px;">Get early access</button>
+        <p class="reassure">The guide stays free either way. We’ll only email you about Prac. — leave anytime.</p>
+      </div>
+    </div></div>
+    <div class="annot conv"><b>The ✓ banner reframes the ask:</b> the student has already received, so the email feels like reciprocity, not a toll. “The guide stays free either way” removes the wall the audience is primed to resent.</div>
+  </div>
+
+  <!-- 4. IN-APP PRIMING -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">04 · In-app priming</div>
+      <div class="cell-title">The guide reappears with a job</div>
+      <p class="cell-note">Now a user, the student sets a placement block. The same guide returns — but actionable: likely skills become one-tap quick-adds, prompts pre-load. The funnel’s end is the product’s start.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>7:30</span><span class="pill"></span></div>
+      <div class="appbar"><span class="back">←</span><span class="crumb">Placement · starts in 3 days</span></div>
+      <div class="body">
+        <div class="prime-banner">
+          <div class="pe">♥ Cardiac · 4 weeks · starts 24 Jun</div>
+          <div class="ph">You’ve got this. Here’s a head start.</div>
+          <div class="pp">We’ve set up the skills you’ll likely meet and a few prompts to come back to. Nothing to fill in now — it’s ready when you are.</div>
+        </div>
+        <div class="blocklabel">Likely skills — tap to track when you do them</div>
+        <div class="chiprow">
+          <span class="pchip"><span class="add">＋</span>Telemetry <span class="std">4</span></span>
+          <span class="pchip"><span class="add">＋</span>12-lead ECG <span class="std">4</span></span>
+          <span class="pchip"><span class="add">＋</span>Fluid balance <span class="std">4</span></span>
+          <span class="pchip"><span class="add">＋</span>Spotting deterioration <span class="std">1</span></span>
+        </div>
+        <div class="blocklabel">A prompt waiting for your first shift</div>
+        <div class="prime-prompt">“What surprised you about the pace today — and how did you keep up?”</div>
+      </div>
+      <div class="footer"><button class="btn btn-ghost">Skip — I’ll add my own</button></div>
+    </div></div>
+    <div class="annot"><b>Priming, not prescribing:</b> “nothing to fill in now,” skills are optional taps, and “skip” is one press. It lowers cold-start friction on an unfamiliar ward without telling the student what their placement <i>will</i> contain — dodging the scope-of-practice liability.</div>
+  </div>
+
+</div>
+
+<footer class="page">
+  <p><b>Why this version survives the stress test.</b> The guide trades in experience and prompts, never facts or protocols — so it can’t go out of date or be wrong per facility, and it doesn’t put your clinical credibility on the line for content you can’t maintain across eight wards. It’s ungated, so it builds goodwill instead of resentment. The conversion sits after the value, framed as reciprocity. And it’s wired to the capture loop — likely skills carry standard tags, prompts match the app’s voice — so the funnel’s payoff is the product itself, not a dead-end PDF.</p>
+  <p style="margin-top:10px;"><b>The honest ceiling.</b> Authored guides are still founder content with a maintenance cost — each new ward is writing you have to do and keep fresh. The version with no ceiling is the one generated from the corpus (“students on cardiac wards most often log these skills”), which is impossible until you have students and data. Authored guides are the bridge to that, not the destination — and writing ten of them before the core loop is proven to retain is the same trap we’ve flagged each round. One guide, for the most common first placement, is the test. Not a library.</p>
+</footer>
+
+</body>
+</html>
