@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getHospital, HOSPITALS, refCardsFor, tipsFor } from '@/src/content/hospitals'
+import { getHospital, HOSPITALS } from '@/src/content/hospitals'
 import { HospitalProfile } from '@/src/ui/hospital/HospitalProfile'
 
 export function generateStaticParams() {
@@ -26,12 +26,5 @@ export default async function HospitalPage({ params }: { params: Promise<{ slug:
   const hospital = getHospital(slug)
   if (!hospital) notFound()
 
-  return (
-    <HospitalProfile
-      hospital={hospital}
-      hospitals={HOSPITALS}
-      tips={tipsFor(hospital.id)}
-      refCards={refCardsFor(hospital.id)}
-    />
-  )
+  return <HospitalProfile hospital={hospital} hospitals={HOSPITALS} />
 }

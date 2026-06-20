@@ -26,6 +26,14 @@ interface AdherenceRow {
   on_track: boolean
 }
 
+interface PendingTip {
+  id: string
+  category: string
+  text: string
+  submitted_at: string
+  hospital_name: string
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const { user, loading } = useUser()
@@ -36,6 +44,8 @@ export default function AdminPage() {
   const [newOrgName, setNewOrgName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+  const [isModerator, setIsModerator] = useState(false)
+  const [pending, setPending] = useState<PendingTip[]>([])
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -73,6 +83,69 @@ export default function AdminPage() {
   useEffect(() => {
     if (selected) void loadRoster(selected)
   }, [selected, loadRoster])
+
+  // Hospital-tip moderation queue (global moderators only — profiles.is_moderator).
+  const loadPending = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('hospital_tips')
+      .select('id, category, text, submitted_at, hospitals(name)')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true })
+    type Row = {
+      id: string
+      category: string
+      text: string
+      submitted_at: string
+      hospitals: { name: string } | { name: string }[] | null
+    }
+    const rows = (data ?? []) as unknown as Row[]
+    setPending(
+      rows.map((t) => {
+        const h = Array.isArray(t.hospitals) ? t.hospitals[0] : t.hospitals
+        return {
+          id: t.id,
+          category: t.category,
+          text: t.text,
+          submitted_at: t.submitted_at,
+          hospital_name: h?.name ?? '—',
+        }
+      })
+    )
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    void (async () => {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('is_moderator')
+        .eq('id', user.id)
+        .maybeSingle()
+      const mod = Boolean(prof?.is_moderator)
+      setIsModerator(mod)
+      if (mod) await loadPending()
+    })()
+  }, [user, loadPending])
+
+  async function moderate(id: string, publish: boolean) {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('hospital_tips')
+      .update(
+        publish
+          ? { status: 'published', is_published: true }
+          : { status: 'rejected', is_published: false }
+      )
+      .eq('id', id)
+    if (error) {
+      setNotice(error.message)
+      return
+    }
+    setPending((p) => p.filter((t) => t.id !== id))
+    setNotice(publish ? 'Tip published.' : 'Tip rejected.')
+  }
 
   async function createOrg() {
     if (!newOrgName.trim()) return
@@ -127,6 +200,39 @@ export default function AdminPage() {
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         {notice && (
           <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">{notice}</p>
+        )}
+
+        {isModerator && (
+          <div>
+            <h2 className="mb-2 font-medium">Hospital tips — moderation</h2>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+              Community submissions waiting for review. Approve to publish, or reject. Nothing is
+              public until you approve it.
+            </p>
+            {pending.length === 0 ? (
+              <Card>
+                <p className="text-sm text-slate-500">Nothing waiting for review.</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {pending.map((t) => (
+                  <Card key={t.id} className="space-y-2">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {t.hospital_name} · {t.category} ·{' '}
+                      {new Date(t.submitted_at).toLocaleDateString()}
+                    </div>
+                    <p className="text-sm">{t.text}</p>
+                    <div className="flex gap-2">
+                      <Button onClick={() => moderate(t.id, true)}>Approve</Button>
+                      <Button variant="danger" onClick={() => moderate(t.id, false)}>
+                        Reject
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {orgs.length === 0 ? (

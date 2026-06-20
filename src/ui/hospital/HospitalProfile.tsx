@@ -15,6 +15,7 @@ import {
   type Tip,
   type TipCategory,
 } from '@/src/content/hospitals'
+import { castVote, fetchRefCards, fetchTips } from '@/src/data/hospitals'
 import { SubmissionForm } from './SubmissionForm'
 
 type SortMode = 'helpful' | 'latest'
@@ -34,19 +35,14 @@ const VOTE_KEY = 'prac.hospital.votes'
 export interface HospitalProfileProps {
   hospital: Hospital
   hospitals: Hospital[]
-  tips: Tip[]
-  refCards: ReferenceCard[]
 }
 
-export function HospitalProfile({ hospital, hospitals, tips, refCards }: HospitalProfileProps) {
-  const dataNow = React.useMemo(() => {
-    const ts = tips.map((t) => new Date(t.verificationDate).getTime())
-    return ts.length ? Math.max(...ts) : Date.parse('2026-06-20')
-  }, [tips])
-
-  // Start from a deterministic, build-stable "now" (so SSR and first client render
-  // match), then switch to the real clock after mount for accurate freshness.
-  const [now, setNow] = React.useState(dataNow)
+export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
+  const [now, setNow] = React.useState(() => Date.now())
+  const [tips, setTips] = React.useState<Tip[]>([])
+  const [refCards, setRefCards] = React.useState<ReferenceCard[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [loadError, setLoadError] = React.useState(false)
   const [votes, setVotes] = React.useState<VoteMap>({})
   const [sort, setSort] = React.useState<SortMode>('helpful')
   const [expanded, setExpanded] = React.useState<Record<TipCategory, boolean>>(DEFAULT_OPEN)
@@ -63,24 +59,65 @@ export function HospitalProfile({ hospital, hospitals, tips, refCards }: Hospita
     } catch {
       /* ignore */
     }
-  }, [])
+    let active = true
+    Promise.all([fetchTips(hospital.id), fetchRefCards(hospital.id)])
+      .then(([t, r]) => {
+        if (!active) return
+        setTips(t)
+        setRefCards(r)
+      })
+      .catch(() => active && setLoadError(true))
+      .finally(() => active && setLoading(false))
+    return () => {
+      active = false
+    }
+  }, [hospital.id])
 
-  function vote(tipId: string, dir: Exclude<VoteDir, null>) {
-    setVotes((prev) => {
-      const next = { ...prev, [tipId]: prev[tipId] === dir ? null : dir }
-      try {
-        localStorage.setItem(VOTE_KEY, JSON.stringify(next))
-      } catch {
-        /* ignore */
-      }
-      return next
-    })
+  function persistVotes(next: VoteMap) {
+    try {
+      localStorage.setItem(VOTE_KEY, JSON.stringify(next))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function vote(tipId: string, dir: Exclude<VoteDir, null>) {
+    const prevDir = votes[tipId] ?? null
+    const newDir: VoteDir = prevDir === dir ? null : dir
+    const snapshot = tips
+
+    // Optimistic: adjust this tip's counts and the active arrow immediately.
+    setTips((cur) =>
+      cur.map((t) => {
+        if (t.id !== tipId) return t
+        let { upvotes, downvotes } = t
+        if (prevDir === 'up') upvotes -= 1
+        if (prevDir === 'down') downvotes -= 1
+        if (newDir === 'up') upvotes += 1
+        if (newDir === 'down') downvotes += 1
+        return { ...t, upvotes: Math.max(upvotes, 0), downvotes: Math.max(downvotes, 0) }
+      })
+    )
+    const nextVotes = { ...votes, [tipId]: newDir }
+    setVotes(nextVotes)
+    persistVotes(nextVotes)
+
+    try {
+      const counts = await castVote(tipId, dir === 'up' ? 1 : -1)
+      // Reconcile with the authoritative server counts.
+      setTips((cur) =>
+        cur.map((t) => (t.id === tipId ? { ...t, upvotes: counts.upvotes, downvotes: counts.downvotes } : t))
+      )
+    } catch {
+      setTips(snapshot) // revert
+      const reverted = { ...votes, [tipId]: prevDir }
+      setVotes(reverted)
+      persistVotes(reverted)
+    }
   }
 
   const openForm = (category: TipCategory | null) => setForm({ open: true, category })
   const closeForm = () => setForm((f) => ({ ...f, open: false }))
-
-  const verifiedCount = tips.length
 
   return (
     <main className="mx-auto max-w-xl px-5 py-8">
@@ -111,7 +148,7 @@ export function HospitalProfile({ hospital, hospitals, tips, refCards }: Hospita
         </span>
         <span className="text-[13px] leading-snug">
           <b className="font-semibold">Curated by {hospital.curatedBy}</b>
-          {verifiedCount > 0 && <> · {verifiedCount} tips verified</>}
+          {!loading && tips.length > 0 && <> · {tips.length} tips verified</>}
           <br />
           <span className="text-ink-faint">
             Every tip is timestamped and human-reviewed before it’s published.
@@ -157,16 +194,20 @@ export function HospitalProfile({ hospital, hospitals, tips, refCards }: Hospita
       </div>
 
       {/* Category sections */}
-      <div className="mt-5 space-y-3">
-        {CATEGORIES.map((meta) => {
-          const catTips = tips.filter((t) => t.category === meta.id)
-          const catRefs = refCards.filter((r) => r.category === meta.id)
-          return (
+      {loading ? (
+        <p className="mt-8 text-center text-sm text-ink-faint">Loading tips…</p>
+      ) : loadError ? (
+        <p className="mt-8 rounded-card border border-flag-line bg-flag-bg p-4 text-center text-sm text-flag-ink">
+          Couldn’t load tips just now. Check your connection and try again.
+        </p>
+      ) : (
+        <div className="mt-5 space-y-3">
+          {CATEGORIES.map((meta) => (
             <CategorySection
               key={meta.id}
               categoryId={meta.id}
-              tips={catTips}
-              refCards={catRefs}
+              tips={tips.filter((t) => t.category === meta.id)}
+              refCards={refCards.filter((r) => r.category === meta.id)}
               now={now}
               sort={sort}
               votes={votes}
@@ -175,9 +216,9 @@ export function HospitalProfile({ hospital, hospitals, tips, refCards }: Hospita
               onToggle={() => setExpanded((e) => ({ ...e, [meta.id]: !e[meta.id] }))}
               onAdd={() => openForm(meta.id)}
             />
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       <p className="mt-8 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
         Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
@@ -247,9 +288,7 @@ function CategorySection({
             {meta.label}
           </span>
           <span className="text-xs text-ink-faint">
-            {tips.length > 0
-              ? `${tips.length} tip${tips.length === 1 ? '' : 's'}`
-              : 'No tips yet'}
+            {tips.length > 0 ? `${tips.length} tip${tips.length === 1 ? '' : 's'}` : 'No tips yet'}
             {refCards.length > 0 && ` · ${refCards.length} official`}
           </span>
         </span>
@@ -360,18 +399,14 @@ function TipCardView({
   onVote: (id: string, d: Exclude<VoteDir, null>) => void
   onRefresh: () => void
 }) {
-  const up = tip.upvotes + (dir === 'up' ? 1 : 0)
-  const down = tip.downvotes + (dir === 'down' ? 1 : 0)
-  const net = up - down
-  const rel = relevancePct(up, down)
+  const net = tip.upvotes - tip.downvotes
+  const rel = relevancePct(tip.upvotes, tip.downvotes)
   const stale = isStale(tip.verificationDate, now)
   const aging = isAgingStreetCheat(tip, now)
   const opacity = stale ? 'opacity-50' : aging ? 'opacity-75' : ''
 
   return (
-    <div
-      className={`flex gap-1 rounded-card border border-line bg-surface p-3 transition ${opacity}`}
-    >
+    <div className={`flex gap-1 rounded-card border border-line bg-surface p-3 transition ${opacity}`}>
       {/* Vote panel */}
       <div className="flex shrink-0 flex-col items-center">
         <button
@@ -439,7 +474,7 @@ function TipCardView({
             <>No votes yet</>
           ) : (
             <>
-              Relevance {rel}% · +{up} / −{down}
+              Relevance {rel}% · +{tip.upvotes} / −{tip.downvotes}
             </>
           )}
         </div>

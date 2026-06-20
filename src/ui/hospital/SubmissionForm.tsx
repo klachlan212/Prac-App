@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Button, Field, Input, Label } from '@/src/ui/components'
 import { CATEGORIES, type Hospital, type TipCategory, type Confidence } from '@/src/content/hospitals'
+import { submitTip } from '@/src/data/hospitals'
 import { todayISO } from '@/src/data/ids'
 
 const MAX = 300
@@ -36,6 +37,7 @@ export function SubmissionForm({
   const [anonymous, setAnonymous] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [done, setDone] = React.useState(false)
+  const [submitting, setSubmitting] = React.useState(false)
 
   const firstRef = React.useRef<HTMLSelectElement>(null)
   const meta = CATEGORIES.find((c) => c.id === category)
@@ -74,8 +76,9 @@ export function SubmissionForm({
 
   if (!open) return null
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (submitting) return
     if (hospitalId === REQUEST_NEW && !requestName.trim()) {
       return setError('Tell us which hospital to add.')
     }
@@ -85,8 +88,30 @@ export function SubmissionForm({
     if (text.length > MAX) return setError(`Keep it under ${MAX} characters.`)
     if (!verifiedOn) return setError('Add the date you last confirmed this.')
     setError(null)
-    setDone(true)
-    // Real impl: enqueue a pending Tip for moderation. Here we just confirm.
+
+    // "Request a new hospital" has no tip to queue — just acknowledge it.
+    if (hospitalId === REQUEST_NEW) {
+      setDone(true)
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await submitTip({
+        hospitalId,
+        category: category as TipCategory,
+        text: text.trim(),
+        subCategory: subCategory || null,
+        confidence: confidence || null,
+        verificationDate: verifiedOn,
+        anonymous,
+      })
+      setDone(true)
+    } catch {
+      setError('Couldn’t submit just now — check your connection and try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -264,7 +289,9 @@ export function SubmissionForm({
               </p>
             )}
 
-            <Button type="submit">Share this tip</Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Sharing…' : 'Share this tip'}
+            </Button>
           </form>
         )}
       </div>

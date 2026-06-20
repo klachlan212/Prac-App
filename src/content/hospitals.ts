@@ -3,10 +3,10 @@
 // NOT a ward guide and NOT clinical content. Scope guardrail is enforced in copy:
 // no ward-specific tips, no gossip, no patient/confidential info.
 //
-// v1 is a front-end build over seed data + client state (voting/submission are
-// in-session; submissions route to a "Lachlan reviews before publishing" success
-// state). Persisting to Supabase with RLS + a real moderation queue — and the care
-// anonymous writes need — is the deliberate next step, not done here.
+// This file holds the static hospital ROSTER (for fast routing, metadata and
+// generateStaticParams), the category definitions, and the pure ranking/freshness
+// helpers. The dynamic, community data — tips, reference cards, votes — lives in
+// Supabase (migration 0004) and is fetched/written via src/data/hospitals.ts.
 
 export type TipCategory = 'Transit' | 'StreetCheat' | 'WardLogistics' | 'ShiftFuel' | 'Expectations'
 
@@ -16,14 +16,14 @@ export interface Tip {
   id: string
   hospitalId: string
   category: TipCategory
-  subCategory?: string // Expectations only
-  text: string // ≤300 chars
+  subCategory?: string
+  text: string
   upvotes: number
   downvotes: number
   verificationDate: string // ISO date — last time the info was confirmed
-  submittedBy: string // role label, or "Anonymous"
-  submittedAt: string // ISO
-  verifiedBy?: string // 'Lachlan' for hand-seeded; undefined = community submission
+  submittedBy: string
+  submittedAt: string
+  verifiedBy?: string // 'Lachlan' for hand-seeded; undefined = community
   confidenceLevel?: Confidence
   isPublished: boolean
 }
@@ -57,8 +57,8 @@ export interface CategoryMeta {
   emoji: string
   label: string
   blurb: string
-  empathyPrompt: string // sparse-state, high-empathy
-  cta: string // sparse-state CTA, e.g. "Share parking info"
+  empathyPrompt: string
+  cta: string
   /** Tailwind classes for the section's tinted header (existing tokens only). */
   tint: string
   accent: string
@@ -130,7 +130,7 @@ export function categoryMeta(id: TipCategory): CategoryMeta {
   return CATEGORIES.find((c) => c.id === id) as CategoryMeta
 }
 
-// ── Seed hospitals ──────────────────────────────────────────────────────────
+// ── Hospital roster (static; mirrors the `hospitals` table) ───────────────────
 export const HOSPITALS: Hospital[] = [
   {
     id: 'royal-melbourne',
@@ -193,228 +193,7 @@ export function getHospital(slug: string): Hospital | undefined {
   return HOSPITALS.find((h) => h.slug === slug)
 }
 
-// ── Seed tips ───────────────────────────────────────────────────────────────
-// Dates are relative to ~20 Jun 2026 to demonstrate fresh / aging / stale states.
-// Specifics are deliberately hedged ("check the signage", "ask the office") —
-// freshness + verification do the rest. General logistics guidance, not gospel.
-export const TIPS: Tip[] = [
-  // Royal Melbourne — Transit: POPULATE (incl. one stale tip for the fade demo)
-  {
-    id: 'rmh-tr-1',
-    hospitalId: 'royal-melbourne',
-    category: 'Transit',
-    text: 'The hospital car park is off Flemington Rd — casual rates add up fast over a full shift. If you’re here for weeks, ask the car park office about a discounted multi-entry staff/student permit before you start paying daily.',
-    upvotes: 28,
-    downvotes: 1,
-    verificationDate: '2026-06-12',
-    submittedBy: 'Lachlan',
-    submittedAt: '2026-06-12',
-    verifiedBy: 'Lachlan',
-    confidenceLevel: 'High',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-tr-2',
-    hospitalId: 'royal-melbourne',
-    category: 'Transit',
-    text: 'Trams 19, 57 and 59 all stop near the Royal Parade / Flemington Rd corner — a 5–7 min walk to the main entrance. Cheaper than parking and you skip the morning boom-gate queue.',
-    upvotes: 19,
-    downvotes: 0,
-    verificationDate: '2026-05-30',
-    submittedBy: '2nd-year student',
-    submittedAt: '2026-05-30',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-tr-3',
-    hospitalId: 'royal-melbourne',
-    category: 'Transit',
-    text: 'If you finish after the trams thin out, the night network bus runs along Royal Parade. Check the PTV app the night before — times shift on weekends.',
-    upvotes: 8,
-    downvotes: 1,
-    verificationDate: '2026-04-18',
-    submittedBy: '3rd-year student',
-    submittedAt: '2026-04-18',
-    confidenceLevel: 'Low',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-tr-4',
-    hospitalId: 'royal-melbourne',
-    category: 'Transit',
-    text: 'Early-bird parking at the Melbourne Uni car parks on Grattan St can work out cheaper if you’re in before 8am and out by evening.',
-    upvotes: 14,
-    downvotes: 3,
-    verificationDate: '2025-11-05', // >6 months → faded + refresh banner
-    submittedBy: 'Student',
-    submittedAt: '2025-11-05',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-  // Royal Melbourne — Ward logistics & access: HYBRID (2 tips + reference cards)
-  {
-    id: 'rmh-wl-1',
-    hospitalId: 'royal-melbourne',
-    category: 'WardLogistics',
-    text: 'Sort your hospital ID/swipe on day one — the access & ID office is in the main building; bring your student ID and placement letter. Without a swipe you’ll be buzzing for every door.',
-    upvotes: 22,
-    downvotes: 0,
-    verificationDate: '2026-06-08',
-    submittedBy: 'Lachlan',
-    submittedAt: '2026-06-08',
-    verifiedBy: 'Lachlan',
-    confidenceLevel: 'High',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-wl-2',
-    hospitalId: 'royal-melbourne',
-    category: 'WardLogistics',
-    text: 'Student lockers are limited and fill fast — bring a padlock and claim one early, or use the change-room cubbies for valuables.',
-    upvotes: 11,
-    downvotes: 1,
-    verificationDate: '2026-05-12',
-    submittedBy: 'Student',
-    submittedAt: '2026-05-12',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-  // Royal Melbourne — Shift fuel: POPULATE
-  {
-    id: 'rmh-sf-1',
-    hospitalId: 'royal-melbourne',
-    category: 'ShiftFuel',
-    text: 'The staff cafeteria does a cheap early breakfast before 7am — handy if you skipped it. Hot food winds down mid-afternoon, so grab lunch before 2pm on a late.',
-    upvotes: 17,
-    downvotes: 0,
-    verificationDate: '2026-06-10',
-    submittedBy: 'Lachlan',
-    submittedAt: '2026-06-10',
-    verifiedBy: 'Lachlan',
-    confidenceLevel: 'High',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-sf-2',
-    hospitalId: 'royal-melbourne',
-    category: 'ShiftFuel',
-    text: 'There’s a 24h vending bank near the main lifts and a microwave in most ward tea rooms — bring leftovers, the nearby cafés don’t open till 7.',
-    upvotes: 9,
-    downvotes: 0,
-    verificationDate: '2026-05-20',
-    submittedBy: 'EN student',
-    submittedAt: '2026-05-20',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-  {
-    id: 'rmh-sf-3',
-    hospitalId: 'royal-melbourne',
-    category: 'ShiftFuel',
-    text: 'Lygon St is a 10-min walk for a proper coffee on a break; for a quick one the foyer kiosk opens around 6:30am.',
-    upvotes: 6,
-    downvotes: 1,
-    verificationDate: '2026-04-30',
-    submittedBy: 'Student',
-    submittedAt: '2026-04-30',
-    confidenceLevel: 'Low',
-    isPublished: true,
-  },
-  // (Royal Melbourne — Street Cheat & Expectations intentionally empty → sparse)
-
-  // The Alfred — a couple of community tips so a 2nd hospital is browsable
-  {
-    id: 'alf-tr-1',
-    hospitalId: 'the-alfred',
-    category: 'Transit',
-    text: 'The Alfred is right on Commercial Rd — the 72 tram and the Sandringham line (Prahran/Windsor) both drop you within a few minutes’ walk. Parking on-site is limited and pricey.',
-    upvotes: 12,
-    downvotes: 0,
-    verificationDate: '2026-06-02',
-    submittedBy: '3rd-year student',
-    submittedAt: '2026-06-02',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-  {
-    id: 'alf-sf-1',
-    hospitalId: 'the-alfred',
-    category: 'ShiftFuel',
-    text: 'Chapel St is two minutes away for food but adds up; the staff cafeteria and a 24h vending area cover night shifts.',
-    upvotes: 7,
-    downvotes: 0,
-    verificationDate: '2026-05-22',
-    submittedBy: 'Student',
-    submittedAt: '2026-05-22',
-    confidenceLevel: 'Low',
-    isPublished: true,
-  },
-
-  // University Hospital Geelong — one tip
-  {
-    id: 'uhg-tr-1',
-    hospitalId: 'university-hospital-geelong',
-    category: 'Transit',
-    text: 'Street parking around Ryrie St / Bellerine St fills early; the hospital decks are easiest but check the daily cap. Geelong station is a 15-min walk or a short bus.',
-    upvotes: 9,
-    downvotes: 0,
-    verificationDate: '2026-06-01',
-    submittedBy: '2nd-year student',
-    submittedAt: '2026-06-01',
-    confidenceLevel: 'Medium',
-    isPublished: true,
-  },
-]
-
-export const REFERENCE_CARDS: ReferenceCard[] = [
-  {
-    id: 'rmh-ref-tr-1',
-    hospitalId: 'royal-melbourne',
-    category: 'Transit',
-    text: 'Official parking rates, permits and validation — current rates and how to apply for a multi-entry permit.',
-    sourceUrl: 'https://www.thermh.org.au/patients-visitors/getting-here',
-    sourceLabel: 'thermh.org.au',
-  },
-  {
-    id: 'rmh-ref-wl-1',
-    hospitalId: 'royal-melbourne',
-    category: 'WardLogistics',
-    text: 'Student placement orientation — ID, swipe access and your first-day checklist.',
-    sourceUrl: 'https://www.thermh.org.au/health-professionals/students',
-    sourceLabel: 'RMH · Students',
-  },
-  {
-    id: 'rmh-ref-wl-2',
-    hospitalId: 'royal-melbourne',
-    category: 'WardLogistics',
-    text: 'After-hours entry and security escort — how to enter and move safely outside business hours.',
-    sourceUrl: 'https://www.thermh.org.au/patients-visitors/getting-here',
-    sourceLabel: 'RMH · Security',
-  },
-  {
-    id: 'rmh-ref-wl-3',
-    hospitalId: 'royal-melbourne',
-    category: 'WardLogistics',
-    text: 'Lost or faulty ID/swipe replacement — where to go and what to bring.',
-    sourceUrl: 'https://www.thermh.org.au/health-professionals/students',
-    sourceLabel: 'RMH · Access office',
-  },
-]
-
-export function tipsFor(hospitalId: string): Tip[] {
-  return TIPS.filter((t) => t.hospitalId === hospitalId && t.isPublished)
-}
-
-export function refCardsFor(hospitalId: string): ReferenceCard[] {
-  return REFERENCE_CARDS.filter((r) => r.hospitalId === hospitalId)
-}
-
-export function tipCountFor(hospitalId: string): number {
-  return tipsFor(hospitalId).length
-}
-
-// ── Ranking & freshness (pure, deterministic) ───────────────────────────────
+// ── Ranking & freshness (pure, deterministic) ────────────────────────────────
 const DAY = 86_400_000
 
 export function ageDays(iso: string, now: number): number {
@@ -458,16 +237,6 @@ export function relevancePct(up: number, down: number): number | null {
   const total = up + down
   if (total === 0) return null
   return Math.round((up / total) * 100)
-}
-
-export type FreshnessStage = 'fresh' | 'aging' | 'fading' | 'stale'
-
-export function freshnessStage(iso: string, now: number): FreshnessStage {
-  const d = ageDays(iso, now)
-  if (d <= 90) return 'fresh'
-  if (d <= 92) return 'aging' // (kept for completeness; main fade boundaries below)
-  if (d <= 182) return 'fading'
-  return 'stale'
 }
 
 /** >6 months: heavy fade + a "refresh this info?" banner. */

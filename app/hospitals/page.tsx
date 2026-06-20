@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { HOSPITALS, tipCountFor } from '@/src/content/hospitals'
+import { HOSPITALS } from '@/src/content/hospitals'
+import { TipCount } from '@/src/ui/hospital/TipCount'
 
 // Public, ungated directory — practical placement logistics, hospital by hospital.
 // Like the ward guides, it lives outside the auth group so it catches search and
@@ -45,35 +46,26 @@ export default function HospitalsPage() {
           <section key={region} className="mt-9">
             <h2 className="font-display text-xl font-semibold tracking-tight">{region}</h2>
             <div className="mt-3 space-y-2.5">
-              {inRegion.map((h) => {
-                const count = tipCountFor(h.id)
-                return (
-                  <Link
-                    key={h.id}
-                    href={`/hospitals/${h.slug}`}
-                    className="block rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-sage-300"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-display text-base font-semibold leading-tight tracking-tight">
-                          {h.name}
-                        </h3>
-                        <p className="mt-0.5 text-xs text-ink-faint">{h.location}</p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                          count > 0 ? 'bg-new text-teal-deep' : 'bg-sage-50 text-ink-soft'
-                        }`}
-                      >
-                        {count > 0 ? `${count} tips` : 'Launching'}
-                      </span>
+              {inRegion.map((h) => (
+                <Link
+                  key={h.id}
+                  href={`/hospitals/${h.slug}`}
+                  className="block rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-sage-300"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-display text-base font-semibold leading-tight tracking-tight">
+                        {h.name}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-ink-faint">{h.location}</p>
                     </div>
-                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-soft">
-                      {h.intro}
-                    </p>
-                  </Link>
-                )
-              })}
+                    <TipCount hospitalId={h.id} />
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-soft">
+                    {h.intro}
+                  </p>
+                </Link>
+              ))}
             </div>
           </section>
         )
