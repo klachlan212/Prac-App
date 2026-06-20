@@ -23,6 +23,7 @@ const SYNC_DOT: Record<SyncState, string> = {
 
 const NAV = [
   { href: '/reflections', label: 'Reflections' },
+  { href: '/hospitals', label: 'Hospitals' },
   { href: '/export', label: 'Export' },
   { href: '/settings', label: 'Settings' },
 ]
