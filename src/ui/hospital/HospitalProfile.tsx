@@ -15,7 +15,13 @@ import {
   type Tip,
   type TipCategory,
 } from '@/src/content/hospitals'
-import { castVote, fetchRefCards, fetchTips } from '@/src/data/hospitals'
+import {
+  castVote,
+  fetchHospitalBySlug,
+  fetchHospitals,
+  fetchRefCards,
+  fetchTips,
+} from '@/src/data/hospitals'
 import { SubmissionForm } from './SubmissionForm'
 
 type SortMode = 'helpful' | 'latest'
@@ -33,12 +39,13 @@ const DEFAULT_OPEN: Record<TipCategory, boolean> = {
 const VOTE_KEY = 'prac.hospital.votes'
 
 export interface HospitalProfileProps {
-  hospital: Hospital
-  hospitals: Hospital[]
+  slug: string
 }
 
-export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
+export function HospitalProfile({ slug }: HospitalProfileProps) {
   const [now, setNow] = React.useState(() => Date.now())
+  const [hospital, setHospital] = React.useState<Hospital | null>(null)
+  const [hospitalsList, setHospitalsList] = React.useState<Hospital[]>([])
   const [tips, setTips] = React.useState<Tip[]>([])
   const [refCards, setRefCards] = React.useState<ReferenceCard[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -60,18 +67,33 @@ export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
       /* ignore */
     }
     let active = true
-    Promise.all([fetchTips(hospital.id), fetchRefCards(hospital.id)])
-      .then(([t, r]) => {
+    setLoading(true)
+    setLoadError(false)
+    ;(async () => {
+      try {
+        const h = await fetchHospitalBySlug(slug)
+        if (!active) return
+        setHospital(h)
+        if (!h) return
+        const [t, r, list] = await Promise.all([
+          fetchTips(h.id),
+          fetchRefCards(h.id),
+          fetchHospitals(),
+        ])
         if (!active) return
         setTips(t)
         setRefCards(r)
-      })
-      .catch(() => active && setLoadError(true))
-      .finally(() => active && setLoading(false))
+        setHospitalsList(list)
+      } catch {
+        if (active) setLoadError(true)
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
     return () => {
       active = false
     }
-  }, [hospital.id])
+  }, [slug])
 
   function persistVotes(next: VoteMap) {
     try {
@@ -119,17 +141,45 @@ export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
   const openForm = (category: TipCategory | null) => setForm({ open: true, category })
   const closeForm = () => setForm((f) => ({ ...f, open: false }))
 
+  const brand = (
+    <div className="flex items-center justify-between">
+      <Link href="/hospitals" className="font-display text-2xl font-semibold tracking-tight">
+        Prac<span className="text-teal">.</span>
+      </Link>
+      <Link href="/hospitals" className="text-sm font-medium text-teal-deep hover:text-ink">
+        ← All hospitals
+      </Link>
+    </div>
+  )
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-xl px-5 py-8">
+        {brand}
+        <p className="mt-10 text-center text-sm text-ink-faint">Loading…</p>
+      </main>
+    )
+  }
+
+  if (!hospital) {
+    return (
+      <main className="mx-auto max-w-xl px-5 py-8">
+        {brand}
+        <p className="mt-10 text-center text-sm text-ink-soft">
+          We don’t have a directory for this hospital yet.
+        </p>
+        <p className="mt-3 text-center">
+          <Link href="/hospitals" className="text-sm font-semibold text-teal-deep hover:text-ink">
+            Browse all hospitals →
+          </Link>
+        </p>
+      </main>
+    )
+  }
+
   return (
     <main className="mx-auto max-w-xl px-5 py-8">
-      {/* Brand + breadcrumb */}
-      <div className="flex items-center justify-between">
-        <Link href="/hospitals" className="font-display text-2xl font-semibold tracking-tight">
-          Prac<span className="text-teal">.</span>
-        </Link>
-        <Link href="/hospitals" className="text-sm font-medium text-teal-deep hover:text-ink">
-          ← All hospitals
-        </Link>
-      </div>
+      {brand}
 
       {/* Header */}
       <p className="mt-8 font-mono text-[11px] uppercase tracking-wider text-teal-deep">
@@ -194,9 +244,7 @@ export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
       </div>
 
       {/* Category sections */}
-      {loading ? (
-        <p className="mt-8 text-center text-sm text-ink-faint">Loading tips…</p>
-      ) : loadError ? (
+      {loadError ? (
         <p className="mt-8 rounded-card border border-flag-line bg-flag-bg p-4 text-center text-sm text-flag-ink">
           Couldn’t load tips just now. Check your connection and try again.
         </p>
@@ -228,7 +276,7 @@ export function HospitalProfile({ hospital, hospitals }: HospitalProfileProps) {
       <SubmissionForm
         open={form.open}
         onClose={closeForm}
-        hospitals={hospitals}
+        hospitals={hospitalsList}
         defaultHospitalId={hospital.id}
         defaultCategory={form.category}
       />

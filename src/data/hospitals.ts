@@ -1,5 +1,5 @@
 import { createClient } from '@/src/auth/client'
-import type { Confidence, ReferenceCard, Tip, TipCategory } from '@/src/content/hospitals'
+import type { Confidence, Hospital, ReferenceCard, Tip, TipCategory } from '@/src/content/hospitals'
 
 // Client data layer for the Hospital Directory. Reads of PUBLISHED tips +
 // reference cards are governed by RLS (anon-readable). Writes go through the
@@ -142,4 +142,102 @@ export async function castVote(
   if (error) throw error
   const row = (Array.isArray(data) ? data[0] : data) as { upvotes: number; downvotes: number }
   return { upvotes: row.upvotes, downvotes: row.downvotes }
+}
+
+// ── Hospital roster (read for everyone; write for moderators via RLS) ─────────
+interface HospitalRow {
+  id: string
+  name: string
+  location: string
+  region: string
+  intro: string
+  curated_by: string
+}
+
+function mapHospital(r: HospitalRow): Hospital {
+  return {
+    id: r.id,
+    slug: r.id,
+    name: r.name,
+    location: r.location,
+    region: r.region,
+    intro: r.intro,
+    curatedBy: r.curated_by,
+  }
+}
+
+export async function fetchHospitals(): Promise<Hospital[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('id, name, location, region, intro, curated_by')
+    .order('region', { ascending: true })
+    .order('name', { ascending: true })
+  if (error) throw error
+  return ((data as HospitalRow[]) ?? []).map(mapHospital)
+}
+
+export async function fetchHospitalBySlug(slug: string): Promise<Hospital | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('id, name, location, region, intro, curated_by')
+    .eq('id', slug)
+    .maybeSingle()
+  if (error) throw error
+  return data ? mapHospital(data as HospitalRow) : null
+}
+
+export interface HospitalInput {
+  id: string
+  name: string
+  location: string
+  region: string
+  intro: string
+  curatedBy?: string
+}
+
+/** Add or edit a hospital (moderator-only via RLS). */
+export async function upsertHospital(input: HospitalInput): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('hospitals').upsert({
+    id: input.id,
+    name: input.name,
+    location: input.location,
+    region: input.region,
+    intro: input.intro,
+    curated_by: input.curatedBy?.trim() || 'Lachlan',
+  })
+  if (error) throw error
+}
+
+export interface RefCardInput {
+  id?: string
+  hospitalId: string
+  category: TipCategory
+  text: string
+  sourceUrl: string
+  sourceLabel: string
+}
+
+/** Add or edit an official reference card (moderator-only via RLS). */
+export async function saveRefCard(input: RefCardInput): Promise<void> {
+  const supabase = createClient()
+  const row = {
+    hospital_id: input.hospitalId,
+    category: input.category,
+    text: input.text,
+    source_url: input.sourceUrl,
+    source_label: input.sourceLabel,
+  }
+  const { error } = input.id
+    ? await supabase.from('hospital_reference_cards').update(row).eq('id', input.id)
+    : await supabase.from('hospital_reference_cards').insert(row)
+  if (error) throw error
+}
+
+export async function deleteRefCard(id: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('hospital_reference_cards').delete().eq('id', id)
+  if (error) throw error
 }

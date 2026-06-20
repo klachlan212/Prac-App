@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
 import { Button, Card, Field, Input } from '@/src/ui/components'
+import { HospitalAdmin } from '@/src/ui/hospital/HospitalAdmin'
 
 // Role-gated admin area. It shows operational adherence only — never reflection
 // content or tags. Metrics come solely from the get_org_adherence security-
@@ -203,6 +204,7 @@ export default function AdminPage() {
         )}
 
         {isModerator && (
+          <>
           <div>
             <h2 className="mb-2 font-medium">Hospital tips — moderation</h2>
             <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
@@ -233,6 +235,8 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+          <HospitalAdmin />
+          </>
         )}
 
         {orgs.length === 0 ? (

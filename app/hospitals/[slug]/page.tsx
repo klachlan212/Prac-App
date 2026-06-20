@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { getHospital, HOSPITALS } from '@/src/content/hospitals'
 import { HospitalProfile } from '@/src/ui/hospital/HospitalProfile'
 
+// The known roster is prerendered for nice metadata/SEO; any moderator-added
+// hospital still resolves dynamically (the profile fetches it by slug from the DB).
 export function generateStaticParams() {
   return HOSPITALS.map((h) => ({ slug: h.slug }))
 }
@@ -14,17 +15,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const h = getHospital(slug)
-  if (!h) return { title: 'Hospital not found · Prac.' }
-  return {
-    title: `${h.name} — placement logistics · Prac.`,
-    description: h.intro,
-  }
+  return h
+    ? { title: `${h.name} — placement logistics · Prac.`, description: h.intro }
+    : {
+        title: 'Hospital directory — placement logistics · Prac.',
+        description: 'Parking, access, food and culture for Australian hospital placements.',
+      }
 }
 
 export default async function HospitalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const hospital = getHospital(slug)
-  if (!hospital) notFound()
-
-  return <HospitalProfile hospital={hospital} hospitals={HOSPITALS} />
+  return <HospitalProfile slug={slug} />
 }

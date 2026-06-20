@@ -42,7 +42,7 @@ export interface Hospital {
   slug: string
   name: string
   location: string
-  region: 'Melbourne' | 'Geelong'
+  region: string
   intro: string
   curatedBy: string
 }

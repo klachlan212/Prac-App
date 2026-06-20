@@ -1,19 +1,16 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { HOSPITALS } from '@/src/content/hospitals'
-import { TipCount } from '@/src/ui/hospital/TipCount'
+import { HospitalsDirectory } from '@/src/ui/hospital/HospitalsDirectory'
 
 // Public, ungated directory — practical placement logistics, hospital by hospital.
 // Like the ward guides, it lives outside the auth group so it catches search and
-// shared links and works without an account.
+// shared links and works without an account. The roster itself loads from the DB
+// (HospitalsDirectory) so moderator additions show up without a redeploy.
 
 export const metadata: Metadata = {
   title: 'Hospital directory — placement logistics · Prac.',
   description:
     'Parking, access, food and culture for Australian hospital placements — the practical stuff, hospital by hospital. Curated and human-reviewed.',
 }
-
-const REGIONS = ['Melbourne', 'Geelong'] as const
 
 export default function HospitalsPage() {
   return (
@@ -39,37 +36,7 @@ export default function HospitalsPage() {
         confidential operations.
       </p>
 
-      {REGIONS.map((region) => {
-        const inRegion = HOSPITALS.filter((h) => h.region === region)
-        if (inRegion.length === 0) return null
-        return (
-          <section key={region} className="mt-9">
-            <h2 className="font-display text-xl font-semibold tracking-tight">{region}</h2>
-            <div className="mt-3 space-y-2.5">
-              {inRegion.map((h) => (
-                <Link
-                  key={h.id}
-                  href={`/hospitals/${h.slug}`}
-                  className="block rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-sage-300"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="font-display text-base font-semibold leading-tight tracking-tight">
-                        {h.name}
-                      </h3>
-                      <p className="mt-0.5 text-xs text-ink-faint">{h.location}</p>
-                    </div>
-                    <TipCount hospitalId={h.id} />
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-soft">
-                    {h.intro}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )
-      })}
+      <HospitalsDirectory />
 
       <p className="mt-9 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
         Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
