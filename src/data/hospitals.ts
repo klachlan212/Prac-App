@@ -1,5 +1,5 @@
 import { createClient } from '@/src/auth/client'
-import type { Confidence, Hospital, ReferenceCard, Tip, TipCategory } from '@/src/content/hospitals'
+import type { AusState, Confidence, Hospital, ReferenceCard, Tip, TipCategory } from '@/src/content/hospitals'
 
 // Client data layer for the Hospital Directory. Reads of PUBLISHED tips +
 // reference cards are governed by RLS (anon-readable). Writes go through the
@@ -148,6 +148,7 @@ export async function castVote(
 interface HospitalRow {
   id: string
   name: string
+  state: string
   location: string
   region: string
   intro: string
@@ -159,6 +160,7 @@ function mapHospital(r: HospitalRow): Hospital {
     id: r.id,
     slug: r.id,
     name: r.name,
+    state: r.state as AusState,
     location: r.location,
     region: r.region,
     intro: r.intro,
@@ -166,11 +168,14 @@ function mapHospital(r: HospitalRow): Hospital {
   }
 }
 
+const HOSPITAL_COLS = 'id, name, state, location, region, intro, curated_by'
+
 export async function fetchHospitals(): Promise<Hospital[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('hospitals')
-    .select('id, name, location, region, intro, curated_by')
+    .select(HOSPITAL_COLS)
+    .order('state', { ascending: true })
     .order('region', { ascending: true })
     .order('name', { ascending: true })
   if (error) throw error
@@ -181,7 +186,7 @@ export async function fetchHospitalBySlug(slug: string): Promise<Hospital | null
   const supabase = createClient()
   const { data, error } = await supabase
     .from('hospitals')
-    .select('id, name, location, region, intro, curated_by')
+    .select(HOSPITAL_COLS)
     .eq('id', slug)
     .maybeSingle()
   if (error) throw error
@@ -191,6 +196,7 @@ export async function fetchHospitalBySlug(slug: string): Promise<Hospital | null
 export interface HospitalInput {
   id: string
   name: string
+  state: AusState | ''
   location: string
   region: string
   intro: string
@@ -203,6 +209,7 @@ export async function upsertHospital(input: HospitalInput): Promise<void> {
   const { error } = await supabase.from('hospitals').upsert({
     id: input.id,
     name: input.name,
+    state: input.state,
     location: input.location,
     region: input.region,
     intro: input.intro,

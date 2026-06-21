@@ -12,6 +12,34 @@ export type TipCategory = 'Transit' | 'StreetCheat' | 'WardLogistics' | 'ShiftFu
 
 export type Confidence = 'High' | 'Medium' | 'Low'
 
+// Australian states/territories — used to filter and group the directory.
+export type AusState = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'NT' | 'ACT'
+
+export const AUS_STATES: AusState[] = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'NT', 'ACT']
+
+export const STATE_CAPITAL: Record<AusState, string> = {
+  NSW: 'Sydney',
+  VIC: 'Melbourne',
+  QLD: 'Brisbane',
+  WA: 'Perth',
+  SA: 'Adelaide',
+  TAS: 'Hobart',
+  NT: 'Darwin',
+  ACT: 'Canberra',
+}
+
+/**
+ * Directory grouping: a hospital in its state's capital city groups under that
+ * city (e.g. "Melbourne"); everything else groups under
+ * "<STATE> Regional/Rural/Remote" (e.g. Geelong → "VIC Regional/Rural/Remote").
+ */
+export function regionGroup(h: Pick<Hospital, 'state' | 'region'>): string {
+  const capital = STATE_CAPITAL[h.state]
+  return h.region.trim().toLowerCase() === capital.toLowerCase()
+    ? capital
+    : `${h.state} Regional/Rural/Remote`
+}
+
 export interface Tip {
   id: string
   hospitalId: string
@@ -41,6 +69,7 @@ export interface Hospital {
   id: string
   slug: string
   name: string
+  state: AusState
   location: string
   region: string
   intro: string
@@ -136,6 +165,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'royal-melbourne',
     slug: 'royal-melbourne',
     name: 'The Royal Melbourne Hospital',
+    state: 'VIC',
     location: 'Parkville, VIC',
     region: 'Melbourne',
     intro:
@@ -146,6 +176,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'the-alfred',
     slug: 'the-alfred',
     name: 'The Alfred',
+    state: 'VIC',
     location: 'Melbourne (Prahran), VIC',
     region: 'Melbourne',
     intro: 'A major trauma hospital on Commercial Rd. The logistics that trip up new students on day one, sorted.',
@@ -155,6 +186,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'st-vincents-melbourne',
     slug: 'st-vincents-melbourne',
     name: 'St Vincent’s Hospital Melbourne',
+    state: 'VIC',
     location: 'Fitzroy, VIC',
     region: 'Melbourne',
     intro: 'Inner-city and tight on space. The practical know-how for getting in and getting fed.',
@@ -164,6 +196,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'austin',
     slug: 'austin',
     name: 'Austin Hospital',
+    state: 'VIC',
     location: 'Heidelberg, VIC',
     region: 'Melbourne',
     intro: 'Out in Heidelberg with its own rhythm. Parking, transport and the day-one essentials.',
@@ -173,6 +206,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'monash-medical-centre',
     slug: 'monash-medical-centre',
     name: 'Monash Medical Centre',
+    state: 'VIC',
     location: 'Clayton, VIC',
     region: 'Melbourne',
     intro: 'Clayton’s big tertiary hub. The getting-there-and-settling-in basics.',
@@ -182,6 +216,7 @@ export const HOSPITALS: Hospital[] = [
     id: 'university-hospital-geelong',
     slug: 'university-hospital-geelong',
     name: 'University Hospital Geelong',
+    state: 'VIC',
     location: 'Geelong, VIC (Barwon Health)',
     region: 'Geelong',
     intro: 'Barwon Health’s main site. Parking and transport from someone who’s done the drive.',
