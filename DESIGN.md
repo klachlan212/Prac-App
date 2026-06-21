@@ -160,7 +160,7 @@ Shared chrome: `src/ui/AppShell.tsx` (header, nav, sync dot, sign-out).
 | `/export` | `app/(student)/export/page.tsx` | Export + identifier gate |
 | `/settings` | `app/(student)/settings/page.tsx` | Reminders, assistance, account |
 | `/guides/[slug]` | `app/guides/[slug]/page.tsx` | **Public** ward guide (ungated) |
-| `/admin` | `app/(admin)/admin/page.tsx` | Roster + adherence (counts only) |
+| `/admin` | `app/(admin)/admin/page.tsx` | **Moderator-only:** hospital moderation queues + editor |
 
 ---
 
@@ -193,8 +193,8 @@ Specialty (70%) → Acknowledgment (88%) → Success (100%)**.
    go to reflections).
 
 Saved on completion: profile (`fullName` from email local-part, `nurseTrack: 'RN'`,
-`yearLevel`, `taggingOn: true`, default reminder) + an active placement. Invite token
-in URL → `accept_invitation` RPC.
+`yearLevel`, `taggingOn: true`, default reminder) + an active placement (skipped for
+the "just looking around" path, which lands on an orientation screen instead).
 
 ---
 
@@ -283,8 +283,8 @@ passwordless OTP (email code). _Spec intent (§2/§7) is magic-link/passwordless
 multi-year handoff; password is a dev-era convenience to revisit before v1._
 
 ### 7.5 Admin (`/admin`)
-Role-gated org roster + adherence (reflection counts, last date, on-track flag) via
-`get_org_adherence` RPC. **Counts only — never reflection content.**
+Moderator-only (`profiles.is_moderator`): the hospital-directory moderation queues
+(pending tips + new-hospital requests) and the hospital editor (`HospitalAdmin`).
 
 ### 7.6 Public ward guide (`/guides/[slug]`)
 See §9.
@@ -393,8 +393,9 @@ practice · 6 Safe, appropriate, responsive quality practice · 7 Evaluates outc
 - **`placements`** — `user_id`, `ward`, `hospital`, `start_date`, `end_date`, `status`.
 - **Reference (world-readable):** `universities` (11 AU + Other), **`ansat_standards`
   (7)**, **`ansat_items` (23, e.g. "2.3")**, `skill_library`, `skill_ansat_map`.
-- **Org/admin:** `organizations`, `memberships` (role owner|admin|student). Adherence
-  via `get_org_adherence` (counts only).
+- **Hospital directory:** `hospitals`, `hospital_reference_cards`, `hospital_tips`,
+  `hospital_tip_votes`, `hospital_requests` — anonymous submit/vote via rate-limited
+  SECURITY DEFINER RPCs; moderator-gated publish.
 
 > Reference tables are served to the client; **the client computes the suggestion and
 > runs the identifier check** (§8). `ansat_*` table/field names may use ANSAT
