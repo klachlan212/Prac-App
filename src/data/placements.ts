@@ -50,15 +50,6 @@ export async function getOrCreateActivePlacement(userId: string): Promise<Placem
   return (await db.placements.get(id)) as Placement
 }
 
-export async function updatePlacement(
-  id: string,
-  patch: PlacementInput
-): Promise<void> {
-  await db.placements.update(id, { ...patch, updatedAt: nowISO(), synced: 0 })
-  await enqueue('placement', id, 'upsert')
-  void flush()
-}
-
 export async function archivePlacement(id: string): Promise<void> {
   await db.placements.update(id, { status: 'archived', updatedAt: nowISO(), synced: 0 })
   await enqueue('placement', id, 'upsert')

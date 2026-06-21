@@ -77,22 +77,3 @@ export async function restoreReflection(id: string): Promise<void> {
 export async function getReflection(id: string): Promise<Reflection | undefined> {
   return db.reflections.get(id)
 }
-
-export function liveReflectionsForPlacement(placementId: string) {
-  // Used with useLiveQuery in components. Reverse chronological, excludes
-  // soft-deleted rows.
-  return async (): Promise<Reflection[]> => {
-    const all = await db.reflections.where('placementId').equals(placementId).toArray()
-    return all
-      .filter((r) => !r.deletedAt)
-      .sort((a, b) => (a.reflectedOn < b.reflectedOn ? 1 : a.reflectedOn > b.reflectedOn ? -1 : b.createdAt.localeCompare(a.createdAt)))
-  }
-}
-
-export async function countReflectionsThisWeek(placementId: string): Promise<number> {
-  const weekAgo = new Date()
-  weekAgo.setDate(weekAgo.getDate() - 7)
-  const cutoff = weekAgo.toISOString().slice(0, 10)
-  const all = await db.reflections.where('placementId').equals(placementId).toArray()
-  return all.filter((r) => !r.deletedAt && r.reflectedOn >= cutoff).length
-}

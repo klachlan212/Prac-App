@@ -249,12 +249,25 @@ export interface RefCardInput {
 
 /** Add or edit an official reference card (moderator-only via RLS). */
 export async function saveRefCard(input: RefCardInput): Promise<void> {
+  // Only allow http/https source links — reject javascript:/data:/etc. before
+  // they're stored and later rendered as an href on a public page (audit M4).
+  const url = input.sourceUrl.trim()
+  let scheme: string
+  try {
+    scheme = new URL(url).protocol
+  } catch {
+    throw new Error('Enter a valid source URL (http:// or https://).')
+  }
+  if (scheme !== 'http:' && scheme !== 'https:') {
+    throw new Error('Source URL must start with http:// or https://.')
+  }
+
   const supabase = createClient()
   const row = {
     hospital_id: input.hospitalId,
     category: input.category,
     text: input.text,
-    source_url: input.sourceUrl,
+    source_url: url,
     source_label: input.sourceLabel,
   }
   const { error } = input.id
