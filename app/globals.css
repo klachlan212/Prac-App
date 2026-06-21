@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    /* Warm sage/eucalyptus ground (CLAUDE.md §1) — calm, not clinical. */
+    background:
+      radial-gradient(1200px 600px at 12% -8%, #eef9f7 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #f0efe7 0%, transparent 55%),
+      #f6f4ef;
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}

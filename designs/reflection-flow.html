@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prac. — Reflection flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#4ecdc4;
+    --teal-deep:#16857c;      /* teal text on light, pressed states */
+    --teal-ink:#0e2725;       /* deep teal-black for primary text */
+    --ink-soft:#4a5d5b;       /* secondary text */
+    --ink-faint:#8aa09d;      /* tertiary / placeholders */
+    --paper:#f6f4ef;          /* warm off-white app bg */
+    --surface:#ffffff;
+    --line:#e7e3da;           /* hairline */
+    --line-soft:#eef0ec;
+    --renew:#6b7f8c;          /* muted slate for "renewed" */
+    --renew-bg:#eef2f4;
+    --new-bg:#e3f7f4;
+    --shadow:0 18px 50px -22px rgba(14,39,37,.45);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 12% -8%, #eef9f7 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #f0efe7 0%, transparent 55%),
+      #efece4;
+    font-family:"DM Sans",system-ui,sans-serif;
+    color:var(--teal-ink);
+    -webkit-font-smoothing:antialiased;
+    padding:56px 28px 90px;
+  }
+
+  /* ---------- page header ---------- */
+  .masthead{max-width:1180px;margin:0 auto 46px;}
+  .wordmark{
+    font-family:"Fraunces",serif;font-weight:600;font-size:34px;letter-spacing:-.01em;
+    display:flex;align-items:baseline;gap:0;
+  }
+  .wordmark .dot{color:var(--teal);}
+  .masthead h1{
+    font-family:"Fraunces",serif;font-weight:600;font-size:clamp(28px,4vw,46px);
+    line-height:1.04;letter-spacing:-.02em;margin:18px 0 14px;max-width:18ch;
+  }
+  .masthead p{
+    font-size:16px;line-height:1.6;color:var(--ink-soft);max-width:64ch;margin:0;
+  }
+  .flowline{
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px;
+    font-family:"DM Mono",monospace;font-size:12.5px;color:var(--teal-deep);
+    text-transform:uppercase;letter-spacing:.08em;
+  }
+  .flowline .step{background:#fff;border:1px solid var(--line);padding:7px 12px;border-radius:999px;}
+  .flowline .arr{color:var(--ink-faint);}
+  .flowline .moved{color:#b06a2c;border-color:#ecd9c4;background:#fbf3e9;}
+
+  /* ---------- gallery ---------- */
+  .gallery{
+    max-width:1180px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:40px 34px;align-items:start;
+  }
+  .cell{display:flex;flex-direction:column;gap:16px;}
+  .cell-head{padding-left:4px;}
+  .cell-num{
+    font-family:"DM Mono",monospace;font-size:12px;color:var(--teal-deep);
+    letter-spacing:.12em;text-transform:uppercase;
+  }
+  .cell-title{
+    font-family:"Fraunces",serif;font-weight:600;font-size:21px;letter-spacing:-.01em;margin:3px 0 6px;
+  }
+  .cell-note{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin:0;}
+  .cell-note b{color:var(--teal-ink);font-weight:600;}
+
+  /* ---------- phone ---------- */
+  .phone{
+    width:312px;max-width:100%;margin:0 auto;
+    background:#0e2725;border-radius:42px;padding:9px;
+    box-shadow:var(--shadow);
+  }
+  .screen{
+    background:var(--paper);border-radius:34px;overflow:hidden;
+    height:632px;display:flex;flex-direction:column;position:relative;
+  }
+  .statusbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:13px 22px 4px;font-size:12px;font-weight:600;color:var(--teal-ink);
+  }
+  .statusbar .dots{display:flex;gap:4px;align-items:center;}
+  .statusbar .pill{width:15px;height:8px;border:1.5px solid var(--teal-ink);border-radius:3px;opacity:.7;}
+
+  .appbar{
+    display:flex;align-items:center;gap:10px;padding:6px 20px 14px;
+  }
+  .appbar .back{font-size:22px;color:var(--teal-ink);line-height:1;width:26px;}
+  .appbar .crumb{
+    font-family:"DM Mono",monospace;font-size:11.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-faint);
+  }
+  .appbar .save-chip{
+    margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+    font-size:11.5px;color:var(--teal-deep);font-weight:500;
+  }
+  .appbar .save-chip .blip{width:6px;height:6px;border-radius:50%;background:var(--teal);}
+
+  .body{flex:1;overflow:hidden;padding:4px 22px 0;}
+  .scrollfade{position:relative;height:100%;}
+
+  /* progress dots — the full-stop motif as commit device */
+  .progress{display:flex;gap:7px;align-items:center;padding:0 22px 12px;}
+  .progress i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block;}
+  .progress i.on{background:var(--teal);}
+  .progress i.done{background:var(--teal-deep);}
+  .progress span{margin-left:auto;font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.06em;}
+
+  .eyebrow{
+    font-family:"DM Mono",monospace;font-size:11.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--teal-deep);margin:0 0 8px;
+  }
+  .h-display{
+    font-family:"Fraunces",serif;font-weight:600;font-size:27px;line-height:1.08;
+    letter-spacing:-.02em;margin:0 0 8px;
+  }
+  .h-display .dot{color:var(--teal);}
+  .lede{font-size:14.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 22px;}
+
+  /* reflection prompt blocks */
+  .prompt{margin-bottom:18px;}
+  .prompt .q{
+    font-family:"Fraunces",serif;font-weight:600;font-size:17px;letter-spacing:-.01em;
+    display:flex;align-items:baseline;gap:8px;margin-bottom:7px;
+  }
+  .prompt .q .dot{color:var(--teal);}
+  .prompt .q .opt{
+    font-family:"DM Sans",sans-serif;font-size:11px;font-weight:500;color:var(--ink-faint);
+    text-transform:uppercase;letter-spacing:.08em;margin-left:auto;
+  }
+  .field{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:13px 15px;font-size:14px;line-height:1.55;color:var(--teal-ink);min-height:54px;
+  }
+  .field.filled{color:var(--teal-ink);}
+  .field.ph{color:var(--ink-faint);}
+  .field.active{border-color:var(--teal);box-shadow:0 0 0 3px rgba(78,205,196,.18);}
+  .caret{display:inline-block;width:1.5px;height:16px;background:var(--teal-deep);vertical-align:-3px;margin-left:1px;animation:blink 1.1s steps(2,start) infinite;}
+  @keyframes blink{to{opacity:0;}}
+
+  /* footer cta */
+  .footer{padding:14px 22px 22px;background:linear-gradient(180deg,transparent,var(--paper) 30%);}
+  .btn{
+    width:100%;border:none;border-radius:16px;padding:16px;font-family:"DM Sans",sans-serif;
+    font-size:15.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;gap:8px;
+  }
+  .btn-primary{background:var(--teal);color:#06302c;}
+  .btn-primary .dot{color:#06302c;}
+  .btn-ghost{background:transparent;color:var(--teal-deep);font-weight:600;padding:13px;font-size:14.5px;}
+  .btn-quiet{background:var(--surface);border:1px solid var(--line);color:var(--teal-ink);}
+
+  /* ---------- skills capture ---------- */
+  .searchwrap{position:relative;margin-bottom:10px;}
+  .search{
+    background:var(--surface);border:1px solid var(--teal);border-radius:16px;
+    box-shadow:0 0 0 3px rgba(78,205,196,.18);
+    padding:14px 15px 14px 42px;font-size:14.5px;color:var(--teal-ink);
+    display:flex;align-items:center;
+  }
+  .search .mag{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:16px;}
+  .search .typed{color:var(--teal-ink);}
+  .dropdown{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-top:8px;
+    overflow:hidden;box-shadow:0 12px 28px -16px rgba(14,39,37,.3);
+  }
+  .opt-row{
+    display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid var(--line-soft);
+    font-size:14px;
+  }
+  .opt-row:last-child{border-bottom:none;}
+  .opt-row .ico{width:26px;height:26px;border-radius:8px;background:var(--new-bg);color:var(--teal-deep);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .opt-row .txt{flex:1;line-height:1.25;}
+  .opt-row .sub{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-faint);letter-spacing:.04em;margin-top:2px;}
+  .opt-row.add .ico{background:#f0efe7;color:var(--ink-soft);}
+  .opt-row .ret{margin-left:auto;color:var(--ink-faint);font-size:12px;}
+  .hl{color:var(--teal-deep);font-weight:600;}
+
+  .chips{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+  .chip{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:12px 13px;display:flex;align-items:center;gap:10px;
+  }
+  .chip .name{font-size:14px;font-weight:500;flex:1;line-height:1.2;}
+  .chip .name .std{display:block;font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-faint);
+    letter-spacing:.04em;margin-top:3px;font-weight:400;}
+  .badge{
+    font-size:11px;font-weight:600;padding:5px 9px;border-radius:8px;letter-spacing:.02em;
+    display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  }
+  .badge.new{background:var(--new-bg);color:var(--teal-deep);}
+  .badge.renew{background:var(--renew-bg);color:var(--renew);}
+  .badge .chev{font-size:9px;opacity:.6;}
+  .chip .x{color:var(--ink-faint);font-size:17px;width:18px;text-align:center;}
+
+  .skill-foot{
+    margin-top:16px;font-size:12.5px;color:var(--ink-faint);line-height:1.5;
+    display:flex;gap:8px;align-items:flex-start;
+  }
+  .skill-foot .b{color:var(--teal-deep);}
+
+  /* override popover (detail) */
+  .pop{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    box-shadow:0 14px 30px -14px rgba(14,39,37,.35);width:180px;
+  }
+  .pop .pop-row{padding:12px 14px;font-size:13.5px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line-soft);}
+  .pop .pop-row:last-child{border-bottom:none;}
+  .pop .pop-row.sel{font-weight:600;color:var(--teal-deep);}
+  .pop .tick{margin-left:auto;color:var(--teal);}
+  .pop .swatch{width:12px;height:12px;border-radius:4px;}
+  .pop .swatch.n{background:var(--teal);}
+  .pop .swatch.r{background:var(--renew);}
+
+  /* ---------- review / ansat ---------- */
+  .review-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;
+  }
+  .review-card .rc-label{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-faint);margin:0 0 8px;}
+  .review-card .rc-text{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin:0;}
+  .review-card .rc-text b{color:var(--teal-ink);font-weight:600;}
+  .mini-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+  .mini-chip{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12px;font-weight:500;display:flex;gap:6px;align-items:center;}
+  .mini-chip .tag{font-size:9.5px;font-weight:600;padding:2px 5px;border-radius:5px;}
+  .mini-chip .tag.n{background:var(--new-bg);color:var(--teal-deep);}
+  .mini-chip .tag.r{background:var(--renew-bg);color:var(--renew);}
+
+  .ansat-suggest .rc-label{display:flex;align-items:center;gap:7px;}
+  .ansat-suggest .auto{background:var(--new-bg);color:var(--teal-deep);font-size:9.5px;padding:2px 6px;border-radius:5px;letter-spacing:.04em;}
+  .std-chip{
+    display:flex;align-items:center;gap:11px;padding:11px 12px;border:1.5px solid var(--teal);
+    background:var(--new-bg);border-radius:13px;margin-bottom:9px;
+  }
+  .std-chip.off{border:1px solid var(--line);background:var(--surface);}
+  .std-chip .code{font-family:"DM Mono",monospace;font-size:13px;font-weight:500;color:var(--teal-deep);width:28px;}
+  .std-chip.off .code{color:var(--ink-faint);}
+  .std-chip .label{flex:1;line-height:1.25;}
+  .std-chip .label .lt{font-size:13.5px;font-weight:600;}
+  .std-chip .label .ls{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .std-chip .check{width:22px;height:22px;border-radius:7px;background:var(--teal);color:#06302c;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .std-chip.off .check{background:transparent;border:1.5px solid var(--line);color:transparent;}
+  .editlink{font-size:12.5px;color:var(--teal-deep);font-weight:600;text-align:center;margin-top:2px;}
+
+  /* ---------- empty + saved ---------- */
+  .center-screen{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 30px;}
+  .mark-dot{
+    width:74px;height:74px;border-radius:50%;background:var(--new-bg);
+    display:flex;align-items:flex-end;justify-content:center;margin-bottom:22px;position:relative;
+  }
+  .mark-dot::after{content:"";width:15px;height:15px;border-radius:50%;background:var(--teal);margin-bottom:17px;}
+  .mark-dot.check{background:var(--teal);}
+  .mark-dot.check::after{display:none;}
+  .mark-dot .tick{font-size:34px;color:#06302c;font-weight:700;line-height:74px;}
+  .center-screen h2{font-family:"Fraunces",serif;font-weight:600;font-size:28px;letter-spacing:-.02em;margin:0 0 10px;}
+  .center-screen h2 .dot{color:var(--teal);}
+  .center-screen p{font-size:14.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 6px;max-width:30ch;}
+  .stat-row{display:flex;gap:22px;margin:24px 0 6px;}
+  .stat{text-align:center;}
+  .stat .n{font-family:"Fraunces",serif;font-weight:600;font-size:26px;color:var(--teal-deep);}
+  .stat .l{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-top:2px;}
+
+  .recents{margin-top:auto;}
+  .recent-row{display:flex;align-items:center;gap:11px;padding:13px 0;border-top:1px solid var(--line-soft);}
+  .recent-row .rdot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;}
+  .recent-row .rt{flex:1;font-size:13.5px;line-height:1.2;}
+  .recent-row .rt .rs{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--ink-faint);margin-top:2px;}
+
+  .annot{
+    font-size:12.5px;line-height:1.55;color:var(--ink-soft);background:#fff;
+    border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:10px;
+    padding:11px 13px;
+  }
+  .annot b{color:var(--teal-ink);}
+
+  footer.page{max-width:1180px;margin:70px auto 0;border-top:1px solid var(--line);padding-top:24px;
+    font-size:13px;color:var(--ink-soft);line-height:1.6;}
+  footer.page b{color:var(--teal-ink);font-weight:600;}
+
+  @media (max-width:560px){
+    body{padding:32px 16px 60px;}
+    .gallery{gap:34px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wordmark">Prac<span class="dot">.</span></div>
+  <h1>The reflection flow, rebuilt for 9pm.</h1>
+  <p>Reflection first, skills second, ANSAT mapping inferred and confirmed at the end — never selected from scratch. Three soft prompts on one screen instead of three gates. Autosave throughout. Designed so a tired student finishes in two minutes, one-handed.</p>
+  <div class="flowline">
+    <span class="step">Home</span><span class="arr">→</span>
+    <span class="step">Reflect</span><span class="arr">→</span>
+    <span class="step">Skills</span><span class="arr">→</span>
+    <span class="step moved">ANSAT · folded into save</span><span class="arr">→</span>
+    <span class="step">Saved</span>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- 1. HOME / EMPTY STATE -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">01 · Home / empty state</div>
+      <div class="cell-title">One primary act, one escape hatch</div>
+      <p class="cell-note">The empty state names the asset being built. A second route — <b>Just log a skill</b> — splits the frequent, low-effort behaviour from the rare, heavy one (critique #1).</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:04</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar">
+        <div class="wordmark" style="font-size:21px;">Prac<span class="dot">.</span></div>
+        <div class="save-chip" style="margin-left:auto;color:var(--ink-faint);font-weight:500;">Placement · RN year 2</div>
+      </div>
+      <div class="body">
+        <div class="center-screen" style="justify-content:flex-start;padding-top:24px;align-items:flex-start;text-align:left;">
+          <div class="mark-dot"></div>
+          <h2 style="font-size:25px;">Nothing logged<br>yet<span class="dot">.</span></h2>
+          <p style="text-align:left;">Your placement story starts with one shift. Two minutes is enough tonight.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-primary">Start a reflection<span class="dot">.</span></button>
+        <button class="btn btn-ghost" style="margin-top:6px;">Just log a skill →</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>Why two buttons:</b> if the only path to your data corpus is a full reflection, the corpus only grows on reflection nights. The skill quick-log keeps the asset compounding on ordinary shifts.</div>
+  </div>
+
+  <!-- 2. REFLECTION -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">02 · Reflect</div>
+      <div class="cell-title">One screen, three soft prompts</div>
+      <p class="cell-note">Gibbs/Driscoll as a thinking scaffold, not three gates (critique #3). <b>Now what?</b> is marked optional. Autosave runs the whole time.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:05</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar">
+        <span class="back">←</span>
+        <span class="crumb">Reflection</span>
+        <span class="save-chip"><span class="blip"></span>Saved just now</span>
+      </div>
+      <div class="progress"><i class="on"></i><i></i><i></i><span>1 of 3</span></div>
+      <div class="body"><div class="scrollfade">
+        <div class="prompt">
+          <div class="q"><span class="dot">.</span>What happened?</div>
+          <div class="field filled">An elderly patient with dementia became distressed during a dressing change. I rushed it and she pulled away — I had to stop and start over.<span class="caret"></span></div>
+        </div>
+        <div class="prompt">
+          <div class="q"><span class="dot">.</span>So what?<span class="opt">why it mattered</span></div>
+          <div class="field ph">Why did it matter? How did you feel, what did you learn about your practice?</div>
+        </div>
+        <div class="prompt">
+          <div class="q"><span class="dot">.</span>Now what?<span class="opt">optional</span></div>
+          <div class="field ph">What will you do differently next shift?</div>
+        </div>
+      </div></div>
+      <div class="footer">
+        <button class="btn btn-primary">Next: add skills →</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>Placeholders do work:</b> each prompt's grey text reframes the question so the tired brain isn't facing a blank box. The full stop sits before each question as the brand motif and a quiet "commit a thought" cue.</div>
+  </div>
+
+  <!-- 3. SKILLS CAPTURE (main) -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">03 · Skills — the core interaction</div>
+      <div class="cell-title">Type, tap, done — New is automatic</div>
+      <p class="cell-note">Autocomplete from the curated library with a free-text fallback (last row). New/Renewed is <b>set by your history</b>, not chosen (critique #4). Each match carries its ANSAT link.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:07</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar">
+        <span class="back">←</span>
+        <span class="crumb">Skills · from this shift</span>
+        <span class="save-chip"><span class="blip"></span>Saved</span>
+      </div>
+      <div class="progress"><i class="done"></i><i class="on"></i><i></i><span>2 of 3</span></div>
+      <div class="body"><div class="scrollfade">
+        <p class="eyebrow">What did you do?</p>
+        <div class="searchwrap">
+          <div class="search"><span class="mag">⌕</span><span class="typed">wound c</span><span class="caret"></span></div>
+        </div>
+        <div class="dropdown">
+          <div class="opt-row">
+            <span class="ico">＋</span>
+            <span class="txt">Basic <span class="hl">wound c</span>are<span class="sub">Std 4 · Comprehensive care</span></span>
+            <span class="ret">↵</span>
+          </div>
+          <div class="opt-row">
+            <span class="ico">＋</span>
+            <span class="txt">Complex <span class="hl">wound c</span>are & dressing<span class="sub">Std 4 · Comprehensive care</span></span>
+          </div>
+          <div class="opt-row">
+            <span class="ico">＋</span>
+            <span class="txt"><span class="hl">Wound</span> assessment<span class="sub">Std 1 · Thinks critically</span></span>
+          </div>
+          <div class="opt-row add">
+            <span class="ico">✎</span>
+            <span class="txt">Add “<span class="hl">wound c</span>” as free text<span class="sub">we’ll match it to the library later</span></span>
+          </div>
+        </div>
+
+        <div class="chips">
+          <div class="chip">
+            <span class="name">De-escalation with distressed patient<span class="std">Std 2 · Engages in therapeutic relationships</span></span>
+            <span class="badge new">New <span class="chev">▾</span></span>
+          </div>
+          <div class="chip">
+            <span class="name">Person-centred care planning<span class="std">Std 4 · Comprehensive care</span></span>
+            <span class="badge renew">Renewed <span class="chev">▾</span></span>
+            <span class="x">×</span>
+          </div>
+        </div>
+      </div></div>
+      <div class="footer">
+        <button class="btn btn-primary">Next: confirm mapping →</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>Free text is allowed but quarantined:</b> the last row’s subtext (“we’ll match it later”) keeps raw strings out of the structured corpus silently — they queue for normalisation instead of polluting the asset (critique #6).</div>
+  </div>
+
+  <!-- 4. SKILLS DETAIL — override -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">03b · New / Renewed override</div>
+      <div class="cell-title">Auto-set, one tap to change</div>
+      <p class="cell-note">The badge is correct by default because the app already knows the student’s history. Tapping it is the rare correction, not the standard step.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:07</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar">
+        <span class="back">←</span><span class="crumb">Skills · from this shift</span>
+        <span class="save-chip"><span class="blip"></span>Saved</span>
+      </div>
+      <div class="progress"><i class="done"></i><i class="on"></i><i></i><span>2 of 3</span></div>
+      <div class="body"><div class="scrollfade">
+        <div class="chips" style="margin-top:6px;">
+          <div class="chip" style="border-color:var(--teal);box-shadow:0 0 0 3px rgba(78,205,196,.15);">
+            <span class="name">De-escalation with distressed patient<span class="std">Std 2 · Engages in therapeutic relationships</span></span>
+            <span class="badge new">New <span class="chev">▾</span></span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <div class="pop">
+            <div class="pop-row sel"><span class="swatch n"></span>New<span class="tick">✓</span></div>
+            <div class="pop-row"><span class="swatch r"></span>Renewed</div>
+          </div>
+        </div>
+        <p class="skill-foot" style="margin-top:20px;">
+          <span class="b">ℹ</span>
+          <span>You’ve never logged this skill before, so we marked it <b style="color:var(--teal-deep);">New</b>. Change it only if you’ve done it on a past shift outside Prac.</span>
+        </p>
+      </div></div>
+      <div class="footer">
+        <button class="btn btn-primary">Next: confirm mapping →</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>Decision removed, not added:</b> the toggle in your spec asked the student to recall their own history. Here the app supplies the answer and the human only overrides the edge case.</div>
+  </div>
+
+  <!-- 5. REVIEW + ANSAT (folded) -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">04 · Review &amp; save</div>
+      <div class="cell-title">ANSAT inferred, pre-selected, editable</div>
+      <p class="cell-note">No standalone mapping gate (critique #2). Candidate standards are derived from the skills + reflection text, ticked by default. Confirm or adjust — no scratch selection, no 1–5 self-score (critique #7).</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:08</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar">
+        <span class="back">←</span><span class="crumb">Review</span>
+        <span class="save-chip"><span class="blip"></span>Saved</span>
+      </div>
+      <div class="progress"><i class="done"></i><i class="done"></i><i class="on"></i><span>3 of 3</span></div>
+      <div class="body"><div class="scrollfade">
+        <div class="review-card">
+          <p class="rc-label">Reflection</p>
+          <p class="rc-text"><b>Distressed patient during a dressing change.</b> Rushed it, had to stop and restart with a calmer approach…</p>
+        </div>
+        <div class="review-card">
+          <p class="rc-label">Skills · 2</p>
+          <div class="mini-chips">
+            <span class="mini-chip">De-escalation <span class="tag n">New</span></span>
+            <span class="mini-chip">Care planning <span class="tag r">Renew</span></span>
+          </div>
+        </div>
+        <div class="review-card ansat-suggest">
+          <p class="rc-label">Maps to <span class="auto">auto-suggested</span></p>
+          <div class="std-chip">
+            <span class="code">2</span>
+            <span class="label"><span class="lt">Therapeutic relationships</span><span class="ls">2.3 communicates effectively</span></span>
+            <span class="check">✓</span>
+          </div>
+          <div class="std-chip">
+            <span class="code">4</span>
+            <span class="label"><span class="lt">Comprehensive care</span><span class="ls">4.2 responds to changing needs</span></span>
+            <span class="check">✓</span>
+          </div>
+          <div class="std-chip off">
+            <span class="code">1</span>
+            <span class="label"><span class="lt">Thinks critically</span><span class="ls">tap to add if it fits</span></span>
+            <span class="check">✓</span>
+          </div>
+          <div class="editlink">＋ Add another standard</div>
+        </div>
+      </div></div>
+      <div class="footer">
+        <button class="btn btn-primary">Save reflection<span class="dot">.</span></button>
+      </div>
+    </div></div>
+    <div class="annot"><b>This is the screen that fixes the flow:</b> the hardest, most abstract task (taxonomy mapping) is now last, assisted, and reversible — riding the momentum of two concrete steps instead of interrupting it.</div>
+  </div>
+
+  <!-- 6. SAVED -->
+  <div class="cell">
+    <div class="cell-head">
+      <div class="cell-num">05 · Saved</div>
+      <div class="cell-title">Close the loop, show the asset growing</div>
+      <p class="cell-note">The confirmation names what was captured and shows the corpus accumulating — the reason to come back tomorrow. Low-key, not a confetti dopamine hit.</p>
+    </div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:09</span><div class="dots"><span>●●●</span><span class="pill"></span></div></div>
+      <div class="appbar"><span style="width:26px;"></span><span class="crumb" style="margin:0 auto;">Prac.</span><span style="width:26px;"></span></div>
+      <div class="body">
+        <div class="center-screen" style="justify-content:flex-start;padding-top:30px;">
+          <div class="mark-dot check"><span class="tick">✓</span></div>
+          <h2>Saved<span class="dot">.</span></h2>
+          <p>Reflection + 2 skills, mapped to Standards 2 and 4.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="n">13</div><div class="l">reflections</div></div>
+            <div class="stat"><div class="n">31</div><div class="l">skills</div></div>
+            <div class="stat"><div class="n">6/7</div><div class="l">standards</div></div>
+          </div>
+          <div class="recents" style="align-self:stretch;margin-top:26px;">
+            <div class="recent-row"><span class="rdot"></span><span class="rt">Distressed patient · dressing change<span class="rs">Std 2 · 4 — just now</span></span></div>
+            <div class="recent-row"><span class="rdot" style="background:var(--renew);"></span><span class="rt">Medication round with RN<span class="rs">Std 4 — yesterday</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-quiet">View my portfolio</button>
+        <button class="btn btn-ghost" style="margin-top:4px;">Done</button>
+      </div>
+    </div></div>
+    <div class="annot"><b>6/7 standards</b> is the quiet nudge that does the retention work: it shows a visible gap to close, which is more motivating for a portfolio-builder than a streak counter.</div>
+  </div>
+
+</div>
+
+<footer class="page">
+  <p><b>What changed from the brief, and why.</b> Ordering is now reflection → skills → ANSAT, with mapping folded into the save screen as auto-suggested, pre-ticked, editable standards rather than a manual mid-flow gate. The three reflective prompts share one screen. New/Renewed is history-derived with a one-tap override. Free text is accepted but queued for normalisation rather than written straight into the corpus. Autosave is shown on every screen. A standalone “just log a skill” path exists so the high-frequency behaviour isn’t trapped behind the low-frequency one.</p>
+  <p style="margin-top:10px;"><b>Still open — your call.</b> (a) Whether the reflection prompts stay fully visible or reveal progressively as each is filled; (b) whether ANSAT 1–5 self-scoring ever enters this flow or stays a facilitator action; (c) the trigger that gets a tired student to open this at all — notification, home nudge, or facilitator prompt — which matters more than any screen here and isn’t designed yet.</p>
+</footer>
+
+</body>
+</html>

@@ -40,17 +40,36 @@ export async function getActivePlacement(userId: string): Promise<Placement | un
   return all.find((p) => p.status === 'active' && !p.deletedAt)
 }
 
-export async function updatePlacement(
-  id: string,
-  patch: PlacementInput
-): Promise<void> {
-  await db.placements.update(id, { ...patch, updatedAt: nowISO(), synced: 0 })
-  await enqueue('placement', id, 'upsert')
-  void flush()
+// The core loop needs somewhere to attach reflections. If a user reaches the
+// editor without an active placement (e.g. all archived), create a blank one so
+// a reflection is NEVER silently dropped (autosave + save both depend on this).
+export async function getOrCreateActivePlacement(userId: string): Promise<Placement> {
+  const existing = await getActivePlacement(userId)
+  if (existing) return existing
+  const id = await createPlacement(userId, {})
+  return (await db.placements.get(id)) as Placement
 }
 
 export async function archivePlacement(id: string): Promise<void> {
   await db.placements.update(id, { status: 'archived', updatedAt: nowISO(), synced: 0 })
   await enqueue('placement', id, 'upsert')
   void flush()
+}
+
+/** Edit the current placement's details in place (ward / hospital / dates). */
+export async function updatePlacement(id: string, patch: PlacementInput): Promise<void> {
+  await db.placements.update(id, { ...patch, updatedAt: nowISO(), synced: 0 })
+  await enqueue('placement', id, 'upsert')
+  void flush()
+}
+
+/**
+ * Move to a new placement: archive the current active one (its reflections stay
+ * attached to it as a separate, still-exportable record) and create a fresh
+ * active placement. Reflections are never moved or deleted.
+ */
+export async function startNewPlacement(userId: string, input: PlacementInput): Promise<string> {
+  const current = await getActivePlacement(userId)
+  if (current) await archivePlacement(current.id)
+  return createPlacement(userId, input)
 }

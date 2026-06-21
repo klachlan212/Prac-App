@@ -1,346 +1,254 @@
-# CLAUDE.md — Engineering guide for Prac
+# Prac. — Build Spec for Claude Code
 
-This file is the **binding contract** for how Prac is built. Read it at the start of
-every session. Every change must satisfy the **Definition of Done** (§7) before it is
-committed or pushed. When this file and a casual instruction conflict, this file wins
-until it is deliberately changed.
+_Authored 19 Jun 2026 · solo RN founder · single source of truth for the v1 build_
 
-These rules are written to be **product-agnostic where possible** (good practice for any
-serious web app) and **specific where it matters** (this app handles confidential health
-content). The simple rule of thumb: *the interface is small, the care goes into storage,
-sync, privacy, and verification.*
+This document is the build brief. It tells you **what to build and why** — the *why* matters because several decisions are deliberately counter-intuitive and a locally-sensible "improvement" will break the model. When in doubt, preserve the rationale, not the convenience.
+
+The **product spec is §§0–8 below**; **Appendix A** is the engineering & deploy contract (how to build/ship without breaking). **Both are binding.** Where a casual instruction conflicts with this file, this file wins until deliberately changed.
+
+Companion artifacts: interactive onboarding prototype (HTML, links held by founder). The prototype shows *what the first-run screens look and feel like*; this spec governs *everything*, and where they differ, **this spec wins**.
 
 ---
 
-## 1. What Prac is
+## 0. Read first — the rules that govern every other decision
 
-A web-first, installable (PWA) clinical-reflection logging app for nursing students on
-placement. Students capture short, dated, standard-tagged reflections — often offline —
-and export a clean PDF for their university at the end. It handles confidential clinical
-content, so privacy is a pass-or-fail property, not a feature.
+1. **The completion test outranks every feature.** Nothing is validated until real waitlist students finish the core loop (reflect → log skills → save) **twice**. Build the loop until it retains *before* adding surface area. Don't build features, an export dashboard, or a content library ahead of a loop that's shown to retain.
 
-Stack: **Next.js (App Router) on Vercel**, **Supabase** (Postgres + Auth + scheduled
-functions, Sydney region), **Dexie/IndexedDB** for local-first storage.
+2. **Framework naming is a hard rule — do not violate it in UI copy.**
+   - **User-facing copy says "NMBA standards"** (the NMBA Registered Nurse Standards for Practice). The string "ANSAT" must **never** appear in any screen, label, button, placeholder, or notification a student sees.
+   - **The data model uses the ANSAT 7-domain / 23-item structure under the hood** for mapping granularity and auditability. Table names, internal fields, and the mapping logic may use ANSAT terminology; the rendered UI never does.
+   - _Why: ANSAT is the NMBA standards operationalised into assessable items — richer for data and auditable ("why Standard 4?"), but it's a specific instrument with licensing questions unresolved. Mapping to it internally is fine; naming it to students is exposure with no user benefit._
 
----
+3. **Two distinct flows — do not merge them.** *Onboarding* (first-ever session: get the student set up and to one saved artifact) is separate from the *core loop* (the recurring reflect→log→save they do after every shift). They share components but are different journeys. Merging first-run setup into the everyday loop breaks both. Sections 2 and 3 below.
 
-## 2. Product invariants (NON-NEGOTIABLE)
-
-These can never be violated by any change. If a task seems to require breaking one, stop
-and ask the product owner.
-
-1. **Reflection content and derived tags are sensitive personal information.** They never
-   leave the device except as (a) encrypted sync to the owner's own account and (b) an
-   export the student initiates.
-2. **No content to any third party — ever.** Not to analytics, not to logs, not to error
-   reporting, not to any cloud or LLM service, not to any administrator.
-3. **Row Level Security is on for every table, from the first migration.** Content rows
-   are readable only by their owner (`auth.uid()`).
-4. **Admins get counts, never content.** Adherence metrics come only from a
-   `security definer` function that returns aggregates. No admin path ever selects
-   `reflections.body` or any tag.
-5. **Data residency.** If the market is Australian, data lives in Australia
-   (Supabase `ap-southeast-2`, Sydney).
-6. **On-device only inference.** Tagging/sentiment runs client-side. Suggestions are
-   confirmed by the student; nothing is applied silently; only confirmed tags are stored.
+4. **Honesty is a design constraint, not a tone.** The app never claims data is "safe" or "de-identified," never claims logs are assessment evidence. These aren't copy preferences — they're the difference between a CNF/academic trusting the product and puncturing it on first contact. Detailed in §4 and §5.
 
 ---
 
-## 3. Architecture principles
+## 1. Product in one paragraph
 
-- **Local-first, offline-first.** Every write lands in IndexedDB (Dexie) immediately and
-  is queued for sync. Writing is never blocked on connectivity; no spinner ever prevents
-  typing. Postgres is the durable cross-device source of truth; the device is the source
-  of truth in the moment.
-- **IndexedDB for content, localStorage only for tiny flags** (e.g. theme). Reflections
-  are long text — never localStorage.
-- **Sync is single-author per user.** Use `updated_at` + last-write-wins per record.
-  Never silently drop a local write.
-- **Foundation strong, surface small.** The schema models more than the v1 UI exposes
-  (multiple placements, organizations, roles, educator-share). Growth must not require a
-  rebuild. Do not delete this latent capacity to "simplify."
-- **Seams, not forks.** All export goes through one `exportPlacement(format)`. All auth
-  through one wrapper. Adding a format or provider must not touch callers.
-- **Read reference data from tables, not hard-coded constants** (e.g. ANSAT standards
-  filtered by `track`), so the Enrolled Nurse set can be added without an interface change.
+Prac. is a free-forever placement companion for Australian nursing students. After a shift, a student writes a short structured reflection, logs the skills it surfaced, and the app maps that to the relevant NMBA standards and saves it to a growing personal record they own and can export. The free tool's job is **acquisition + corpus capture**, not conversion. Revenue comes years later from a paid new-grad employability layer (selection-criteria + cover-letter toolkit, ~$39–49 seasonal unlock) pre-filled from the student's own logged data. The fragile joint in the whole model is the **multi-year handoff**: a 1st-year must still be using and remembering Prac. as a 4th-year for the paid layer to convert. Every decision below serves either corpus quality or that handoff.
+
+**Brand:** Fraunces (display) + DM Sans (body/UI). Teal #4ecdc4 as the confident action/accent colour only; calm sage/eucalyptus greens + warm off-white as the ground. The full stop in "Prac." is a design device. Mood: supported and capable, **not** clinical. One decision per screen; generous whitespace.
 
 ---
 
-## 4. Security & privacy — the first lens on everything
+## 2. Onboarding flow (first-ever session)
 
-Security and least-privilege access are the **primary design constraint** of this product,
-not an afterthought. **Apply this lens to every feature, every table, every endpoint, and
-every dependency — by default, without being asked.** When a new feature is discussed, the
-first questions are always:
+**Goal:** get a reachable identity + the student to **one saved artifact**, with the least possible friction. Activation = "created one meaningful thing," not strictly "logged a shift" — much of the funnel signs up pre-placement.
 
-> *Who can read this? Who can write this? What is the least access that makes it work?
-> Where does the data live and travel? What happens to it on delete? What breaks if the
-> client is malicious or an admin session is stolen?*
+**Input rule:** exactly **one text field in the whole flow (email)**. Everything else is tap-select. Optimise for completion.
 
-If a feature can't answer those, it isn't ready to build. Surface the security implications
-of any new feature **proactively**, as part of proposing it — don't wait to be asked.
+### Screen sequence
+1. **Welcome.** RN credibility badge ("Built by a registered nurse") + "free for your whole degree." One CTA. No gate — value is visible before signup.
+2. **Email** (the load-bearing screen). Framed as cross-year continuity: log in once, Prac. remembers across the whole degree. Magic-link / passwordless — students lose passwords across years. _This sits **before** the branch deliberately, to protect the multi-year handoff; flagged for A/B test against email-after-activation (§7)._
+3. **Context branch — "Where are you right now?"** Three tap options that route activation:
+   - *On placement now* → first reflection (§2 path A)
+   - *Placement this semester* → saved ward-prep guide (§2 path B)
+   - *Just looking around* → light browse of standards + guide
+4. **Year** — tap-select chips: 1st / 2nd / 3rd / 4th year / Postgrad. (Copy: maps reflections to the right **NMBA standards**.)
+5. **Specialty / ward** — tap-select chips: Med-surg, Aged care, Mental health, Emergency, Paediatrics, Community, Not sure yet, **None of these**. ("Not sure yet" = doesn't know the ward; "None of these" = knows it, not listed — keep both distinct.)
 
-### 4.1 Access control — least privilege, deny by default
+### Activation paths
+- **Path A (on placement):** drop straight into a **genuinely blank** first reflection — no pre-filled standard/domain, no worked example masquerading as content. A neutral prompt label lowers the blank-page barrier ("One thing you did today that you're proud of"). It's their real first entry. Save → success.
+- **Path B (upcoming / exploring):** a saved ward-prep guide delivers immediate value with no shift to log, and sets a **placement-start return trigger** (see open question §7 — the trigger needs a captured placement date or the "we'll remind you" promise is empty).
 
-- **Every user can access only their own data — and only the operations their role allows.**
-  Authorization is enforced in the database with Row Level Security, never only in the UI.
-  A compromised client, a forged request, or a stolen admin session must still hit a wall
-  at the database.
-- **Deny by default.** A new table ships with RLS enabled and *no* policy, then we add the
-  narrowest policy the feature needs. Never open a table "just for now."
-- **Owner-scoped content** (`profiles`, `placements`, `reflections`, `reflection_standards`,
-  `reflection_tags`) grants a row only when it belongs to `auth.uid()`.
-- **Role-scoped metadata** (organizations, memberships, invitations) uses role-aware
-  policies; an admin only ever reaches organizations they actually administer.
-- **Admins never reach content** — not reflections, tags, or exports, by any path. Admin
-  metrics come solely from a `security definer` function that returns counts. Verify this
-  with a second account before any admin feature is called done.
-- **Never trust client-supplied identity or authority.** Role, `org_id`, and `user_id` are
-  derived from the session server-side, never accepted from the request. This is how
-  privilege escalation is made impossible by construction.
-- **The service-role key never touches the browser.** Only the anon key ships client-side,
-  and it is safe *only because* RLS holds.
-
-### 4.2 Data protection
-
-- Encrypt in transit and at rest. Treat reflection content and derived tags as the most
-  sensitive class of data in the system.
-- **No PII and no content in logs, analytics, or error payloads — ever.** If an error
-  reporter is added, scrub message bodies. Telemetry is anonymous counts only, off by
-  default, explicit opt-in.
-- **Data minimization.** Collect only the named onboarding fields. No contacts, no precise
-  location, nothing not used by a shipped feature.
-- **Deletion is real.** Soft delete with a recovery window, then scheduled hard delete.
-  Honour a genuine account-and-content deletion path.
-- **Australian data residency** (Supabase Sydney) while the market is Australian.
-
-### 4.3 Secrets & supply chain
-
-- Secrets live only in environment variables — never in the repo or the client bundle.
-- **Patch security issues immediately and automatically — never ask permission to fix a
-  known vulnerability.** When a build log, `npm audit`, or an advisory flags a vulnerable
-  dependency, bump it to the nearest safe patched version on its own commit, re-run
-  `npm run verify`, and push. Prefer the minimal in-line patch (same major/minor) over a
-  risky major jump. Escalate *only* if the sole available fix is a breaking major upgrade —
-  and even then, lead with the recommendation to take it.
-- Keep `package-lock.json` committed so installs are reproducible and auditable.
-
-### 4.4 In the product
-
-- The write screen persistently discourages patient-identifiable detail; onboarding states
-  the expectation once.
-- Before any feature touching content, sharing, or admin visibility is called done,
-  re-read §2 and this section and confirm nothing is weakened.
+### Success screen
+Confirms the artifact saved; **the future-value seed appears once, gently, here only** ("everything you log now quietly builds the record your final-year self uses for grad") — not its own screen, not woven through earlier steps.
 
 ---
 
-## 5. Code quality standards
+## 3. Core loop (the recurring engine — the real product)
 
-- **TypeScript strict. No implicit `any`.** Type the boundaries — especially third-party
-  callbacks (this is what broke the first Vercel build). Avoid `any`; if unavoidable,
-  justify it in a comment.
-- **Small, pure functions** in `src/data`, `src/sync`, `src/tagging`, `src/export`. The
-  data layer is the source of truth — avoid heavy global state.
-- **Accessibility is a requirement, not a polish pass.** Dark theme following the system
-  setting, dynamic type, **minimum 44px touch targets**, one-handed reach for write+save,
-  semantic HTML, labelled controls. The app never loses text.
-- **No dependency that ingests message content**, and none that requires reflection text
-  to leave the device for anything but the student's own export.
-- **Keep `package-lock.json` committed.** Installs must be reproducible.
+This is what students do after every shift once onboarded. It is the corpus-building behaviour and the thing the completion test measures.
 
----
+### Ordering (changed from original brief): `Reflection → Skills → NMBA mapping → Saved`
+The brief had mapping mid-flow; it's moved to the **end**. Reflection surfaces what mattered → skills fall out of it (concrete, easy) → mapping is inferred from both at the review/save step.
 
-## 6. Build & verification discipline (the anti-"broken build" rules)
+### Reflection screen
+- **One screen, three soft prompts** (_what happened → so what → now what_), **not** three gated screens. "Now what?" is optional. Placeholders reframe each prompt so a tired brain isn't facing a blank box.
+- _Why: every screen transition is an abandonment point; gating multiplies drop-off at 9pm with an infant and bad hospital signal._
 
-The whole point of this section: **a build should never fail on Vercel for a reason we
-could have caught locally.**
+### Skills
+- **New/Renewed status: auto-detected from the student's own history**, one-tap override. Never a manual toggle — the app already knows the history; don't make a tired person recall it.
+- **Free-text skills allowed as fallback**, but matched aggressively against the skill library first and **queued for normalisation** — raw strings never written silently into the corpus. _The structured corpus is the core asset; "wound care / Wound Care / dressing change" as separate entries degrades it over 2–3 years._
+- **Standalone "just log a skill" path** exists separately from the full reflection flow. Logging skills is high-frequency/low-effort; full reflection is low-frequency/high-effort. Don't trap the frequent corpus-building behaviour behind the rare heavy one.
 
-- **Before every commit/push, run `npm run verify` and see it GREEN.** This runs lint +
-  typecheck + production build — the same things Vercel runs. No exceptions, even for
-  "one-line" changes.
-- **A green build is necessary, not sufficient — mind the runtime, not just the compile.**
-  Code can build cleanly and still crash on the runtime it actually deploys to. The classic
-  trap here: **Next.js middleware runs on the Edge runtime by default**, where Node-only
-  globals and APIs (`__dirname`, `process.version`, `fs`, `path`, most of `node:*`) do not
-  exist. A dependency that uses them compiles fine (often just a *warning* like "A Node.js
-  API is used … not supported in the Edge Runtime") and then throws at request time —
-  `MIDDLEWARE_INVOCATION_FAILED` / `ReferenceError: __dirname is not defined` — on a build
-  Vercel reported as successful. Treat Edge-runtime warnings as errors. The right fix is to
-  **keep Node-only deps out of the middleware bundle**: middleware should do only cheap,
-  Edge-safe work (read cookies/headers, redirect) and never import a heavy client like
-  `@supabase/ssr` (which pulls in the full `@supabase/supabase-js`). Push real auth to where
-  it belongs — Postgres RLS and the server-side Supabase client used by pages/route handlers
-  (which run on the Node serverless runtime). **Do not reach for `runtime: 'nodejs'` on
-  middleware as the escape hatch:** on Vercel it can fail a different way — the function is
-  emitted as CommonJS `middleware.js` containing ESM `import`s and dies with "Cannot use
-  import statement outside a module". The general rule: **know which runtime each file
-  deploys to (Edge vs Node vs browser), and confirm its imports are legal there** — the
-  build won't always tell you. **On this project, even a dependency-free Edge middleware
-  still failed with `MIDDLEWARE_INVOCATION_FAILED` on Vercel**, so the middleware was removed
-  entirely and the auth redirect moved to a client guard (`src/auth/guard.tsx`). If Vercel
-  middleware misbehaves inexplicably, prefer client-/server-component gating over fighting
-  the middleware runtime — there is no app feature that *requires* middleware here.
-- **CI runs the same checks on every push** (`.github/workflows/ci.yml`). A red CI is
-  never merged. CI is the safety net; local `verify` is the first line.
-- **Treat security advisories as work.** When the build log flags a vulnerable dependency
-  (e.g. a Next.js CVE), schedule the bump, apply it on its own branch/commit, and
-  re-verify — don't let it rot.
-- **Never commit `.env.local`, real keys, `node_modules`, or `.next`.** (Enforced by
-  `.gitignore`.)
+### NMBA mapping (rendered as "NMBA standards"; ANSAT 7/23 structure underneath)
+- **Inferred, pre-selected, editable** — folded into the review/save screen, **not** a standalone manual gate. Candidate standards derived from logged skills (skill library is pre-tagged to ANSAT items) + a keyword→standard table over the reflection text. Student confirms or adjusts; **never selects from 23 items cold.**
+- **No nightly 1–5 self-scoring.** Mapping only. Scoring is the assessor's role in real ANSAT — replicating it produces noise and oversteps the student's role.
+- _Why inference not manual: manual taxonomy mapping at 9pm produces noisy data, interrupts momentum, and the mapping is itself the competency students are still learning._
 
-If `verify` cannot run (e.g. no network to install deps), say so explicitly in the reply
-rather than pushing unverified — never claim a build passed that wasn't run.
+### State & save
+- **Autosave / drafts on every screen — non-negotiable.** 9pm + one-handed + infant = interruption is the default; a lost half-written reflection is a churned user.
+- **Empty state names the asset being built.** **Saved state shows the corpus growing** (reflections / skills / standards).
+- **Coverage ("6 of 7 standards") is a quiet stat, never the organising frame.** _A coverage grid as the main UI invites Goodhart — students logging to fill the grid rather than because the reflection surfaced it, corrupting both the corpus and the reflective practice._
 
 ---
 
-## 7. Definition of Done (every change must pass this)
+## 4. History & export (the payoff surface)
 
-- [ ] `npm run verify` is **green** locally (lint, typecheck, build) — *and* any code that
-      deploys to the Edge runtime (notably `middleware.ts`) is free of Node-only APIs and
-      heavy clients (§6 runtime-quirk rule). A green build ≠ a working deploy.
-- [ ] **Access control reviewed (§4.1):** users reach only their own data; any new table is
-      deny-by-default with the narrowest RLS policy; no admin path can reach content;
-      identity/role is derived server-side, never trusted from the client.
-- [ ] No secrets, no reflection content, and no PII in code, logs, commits, or error paths.
-- [ ] No new or known-vulnerable dependency introduced; advisories patched (§4.3).
-- [ ] Any new table/column has RLS and respects the §2 invariants.
-- [ ] UI changes meet the §5 accessibility bar.
-- [ ] Committed with a clear, descriptive message and pushed to the feature branch.
-- [ ] If anything was skipped or couldn't be verified, it's stated plainly in the reply.
+**Framing:** a **student-owned reflective record**, exportable/shareable at the student's choice. **Explicitly NOT** assessment evidence, competency proof, or proof of practice. _Self-reported logs aren't assessment evidence; claiming so detonates the "credible clinician" positioning the instant a CNF or academic sees it. In most AU programs the assessor completes ANSAT, not the student._
 
----
+**v1 scope:** a **filterable history + clean export.** **Not a portfolio dashboard** — a portfolio is empty for the first weeks, so its payoff is back-loaded past the week 1–3 churn window. Early retention comes from the per-session loop.
 
-## 8. Git & workflow discipline
+**Filters:** by NMBA standard (primary), skill type (New/Renewed), recency.
 
-- Develop on the designated feature branch (currently `claude/confident-turing-wspzot`).
-  Never push to another branch — especially `main` (production) — without explicit
-  permission.
-- Descriptive commit messages: what changed and why. One logical change per commit where
-  practical.
-- Do not open a pull request unless explicitly asked.
+### Identifier handling (this is a design control, not a checkbox)
+- **Identifier-review gate:** a **mandatory step between "choose export scope" and "file exists"** — structural, not a setting. Every flagged identifier forces a human decision (fix, or explicitly dismiss) before a file can generate.
+- **Writing-time inline nudge** flags likely identifiers as the student types; the flag **persists** into history/detail views so confidentiality is a running habit, not a final hurdle.
+- **Copy discipline — absolute:** the UI **never** says "safe" or "de-identified." Coaching register only — _"we flag what we can spot; the rest is on you."_ State fallibility on-screen, **including on the success screen** where confidence is highest. _A heuristic that says "no issues found" manufactures false confidence and ships the breach. The honest claim is the one a CNF can't puncture._
+- **Sign-off ≠ control.** A click-through agreement is a liability shield for you, not a safety control for the data. Keep it if legal wants it — it's the floor, not the mechanism.
 
-### 8.1 Operator context — who you're working with
-
-The product owner is **not deeply versed in Vercel or Supabase** (infrastructure,
-deployments, branches, env vars, DNS, build settings). Treat that as a standing fact, not
-a one-off. It changes how you work:
-
-- **Inspect and act yourself.** Use the MCP tools (Supabase, GitHub) and the local git
-  state to find out the real situation before reporting — don't hand the operator raw infra
-  tasks ("go check your Vercel production branch") as if they'll know how. Within the branch
-  rules above, make the necessary infra changes directly; for anything outward-facing or
-  hard to reverse (e.g. pushing to `main`/production), explain it and get a yes first, but
-  come with the change *prepared*, not as homework for them.
-- **When you must explain, explain in depth and in plain language.** Spell out what the
-  thing is, why it's the cause, and what the fix does — assume no prior Vercel/Supabase
-  knowledge. "What you're lacking" answers are welcome and should be thorough.
-- Never assume an infra concept is understood. A short glossary beats a bare term.
+### Honest limits (keep on the record, design around them)
+- A client-side heuristic misses **unstructured** identifiers ("the only patient of X background that week," rare presentations, indirect references).
+- The **share step is outside the app's control** — once the file leaves, reach is zero. The gate is the last point of influence.
+- Because the corpus syncs (see §5), gate copy is **"before you share this,"** not "before this leaves your phone." Still honest, now true.
 
 ---
 
-## 9. Build sequence (from the spec) and current status
+## 5. Backend / architecture (Claude Code · Vercel + Supabase)
 
-1. [x] **Scaffold** — Next.js, Supabase migration (all tables + RLS + admin metrics fn),
-   seeds (universities, 7 RN ANSAT standards).
-2. [x] **Auth** — Supabase email one-time code, session middleware, profile creation.
-3. [x] **Local-first data layer** — Dexie schema, repositories, sync queue + engine
-   (push with join-table fan-out, pull with last-write-wins).
-4. [x] **Write + list screens** — multi-standard tagging, continuous autosave, soft
-   delete with undo.
-5. [x] **On-device tagging (tier one)** — local lexicon suggestions, confirmed → stored.
-6. [x] **Export** — paginated PDF (print) + plain text via one `exportPlacement` seam.
-7. [x] **Onboarding** + one-time confidentiality acknowledgement + invite acceptance.
-8. [x] **Reminders** — in-app weekly banner, settings; weekly email Edge Function written
-   (`supabase/functions/weekly-reminder`, deploy + cron pending — see file header).
-9. [x] **Admin** — org bootstrap, invitations, roster, count-only adherence metrics.
-10. [~] **Lifecycle/theme/a11y/empty states** — placement archive, dark theme, 44px
-    targets, empty states done; dedicated time-to-write pass still to do.
-11. [ ] **Verify every acceptance criterion** (spec §12) — needs migrations run + a manual
-    pass with two accounts (esp. the RLS/admin no-content checks).
+**Two separate decisions — do not conflate: where the _check_ runs vs. where the _corpus_ lives.**
 
----
+### Corpus storage: store + harden (decided)
+Supabase holds the corpus — a 2–3 year asset can't live on one phone. Requires:
+- **Row-level security** (a student only ever sees their own rows)
+- Encryption at rest
+- A real privacy policy
+- _Consequence already absorbed into §4 copy: clinical text does sync, so the gate says "before you share."_
 
-## 10. Decisions log
+### Identifier check: in the app bundle — NOT a backend service, NOT an LLM
+Deterministic JS/TS:
+- Regex for **structured** identifiers: ages ("84yo"), "bed 3", room/MRN-style digit runs, dates, phone numbers.
+- Name detector: curated common AU given/surname list + title patterns (Mr/Mrs/Dr + Capitalised) + lone clinical initials.
+- On-device NER (ONNX / transformers.js) is a **v2** recall upgrade, not v1.
+- _Why: routing raw clinical text through a server/edge function to check it defeats the entire point._
 
-- **2026-06-16** — Platform confirmed: web-first Next.js PWA on Vercel + Supabase.
-- **2026-06-16** — Build broke on Vercel from an untyped `@supabase/ssr` cookie callback.
-  Lesson encoded as §6: always run `npm run verify` before pushing. Added CI as a net.
-- **2026-06-16** — Security elevated to the primary design lens (§4 rewritten): explicit
-  least-privilege access model, deny-by-default RLS, server-derived identity, and a standing
-  rule to **auto-patch security advisories without asking**.
-- **2026-06-16** — Security patch pass. `npm audit` showed Next.js `15.3.x` still carried
-  many high-severity advisories (SSRF, cache poisoning, XSS, DoS), so patched Next.js
-  `15.3.3` → `15.5.19` (same major, minor bump) and forced `postcss` `>=8.5.10` via an
-  `overrides` block (fixes the copy bundled inside Next.js too). `npm audit` now reports
-  **0 vulnerabilities**; `npm run verify` green. Lesson: trust `npm audit`, not just the
-  build log — and `npm audit fix --force` can suggest absurd downgrades; patch deliberately.
-- **2026-06-16** — Database migrations + seeds applied to Supabase project
-  `kkytglabcwevvnjmmrhy` (`prac-app-database`, region `ap-southeast-2` Sydney). Verified:
-  10 tables RLS-enabled, 11 universities, 7 ANSAT standards, all 4 functions present.
-  Security advisor flags pending (mutable `search_path` on the 3 SECURITY DEFINER functions;
-  `organizations` RLS-enabled-no-policy). Supabase migration-history table is empty (schema
-  was applied via raw SQL, not `apply_migration`).
-- **2026-06-16** — Operator context codified (§8.1): product owner is not versed in
-  Vercel/Supabase, so Claude inspects/changes infra itself and explains in depth.
-- **2026-06-16** — **Production-deploy gap found.** `main` (Vercel's production branch) is
-  NOT the Next.js app — it's a static "Hello World" `index.html` placeholder pinned by a
-  `vercel.json` (`@vercel/static`) with hardcoded `YOUR_SUPABASE_URL` placeholders. The real
-  app lives only on the feature branch and has never been promoted to production, so adding
-  env vars in Vercel changed nothing the user could see. Fix requires putting the app on the
-  production branch and removing the static `vercel.json`/`index.html` so Vercel builds
-  Next.js. (Resolved when the owner merged the app to `main` via PR #2.)
-- **2026-06-16** — **`MIDDLEWARE_INVOCATION_FAILED` on production.** Once the real app was on
-  `main`, every request 500'd with `ReferenceError: __dirname is not defined`. Root cause:
-  `middleware.ts` imports `createServerClient` from `@supabase/ssr`, which bundles the full
-  `@supabase/supabase-js` (uses `process.version`/`__dirname`); Next.js runs middleware on the
-  **Edge runtime** by default, where those Node globals don't exist. The build only *warned*
-  about `process.version` and otherwise passed — a green build, broken deploy. Fix: pin the
-  middleware to the Node.js runtime (`runtime: 'nodejs'`, stable since Next 15.5) and wrap the
-  `getUser()` call in try/catch (fail to null user → protected paths go to /sign-in). Lesson
-  encoded in §6: a green build is not a working deploy; mind the Edge-vs-Node runtime.
-- **2026-06-16** — **Correction: the Node.js-runtime middleware fix above also failed on
-  Vercel.** Pinning middleware to `runtime: 'nodejs'` got past the `__dirname` Edge crash, but
-  Vercel then emitted the function as CommonJS `middleware.js` holding ESM `import`s →
-  `SyntaxError: Cannot use import statement outside a module` (loading `/var/task/middleware.js`).
-  Real fix: **drop `@supabase/ssr` from the middleware entirely** and gate on the Edge runtime
-  using only the presence of Supabase's `sb-<ref>-auth-token` cookie (excluding the transient
-  `-code-verifier` cookie). Middleware bundle dropped 90 kB → 34 kB, no Node deps, no runtime
-  override. Auth is still enforced for real by RLS + the server-side Supabase client on each
-  page; the middleware is just a UX redirect. §6 updated to say: keep heavy clients out of
-  middleware, don't use `runtime: 'nodejs'` as an escape hatch.
-- **2026-06-16** — **Middleware removed entirely.** Even the dependency-free Edge cookie gate
-  still 500'd on Vercel with `MIDDLEWARE_INVOCATION_FAILED` across every recent deployment, so
-  the cause is the middleware mechanism on this project, not its contents. Deleted
-  `middleware.ts` and moved the auth redirect to a client guard (`src/auth/guard.tsx`) wired
-  into the `(student)` and `(admin)` layouts: it reads the Supabase session client-side and
-  redirects unauthenticated users to `/sign-in` (and signed-in users away from it). No content
-  leaks — protected pages render from the per-device local store, and Postgres RLS remains the
-  real boundary. Net: no middleware = the error class is gone by construction. Also clarified
-  the recurring symptom that each Vercel deployment keeps a frozen per-deployment URL; test the
-  canonical production domain, not an old `…-<hash>.vercel.app` link.
-- **2026-06-16** — **All routes 404 on Vercel (build green, code clean).** With middleware gone,
-  every route — `/`, `/sign-in`, everything — returned 404, even though `npm run verify` emits
-  all of them and the repo is a textbook Next.js app (no `vercel.json`, empty `next.config.ts`,
-  no `output: 'export'`/`basePath`). Cause: the Vercel **project** wasn't building/serving this
-  as Next.js — a leftover from when the project deployed the static Hello-World `index.html`
-  (the middleware 500 had been masking it, since middleware ran before routing). Fix attempted
-  from the code side: added `vercel.json` with `"framework": "nextjs"`, `"buildCommand":
-  "next build"`, `"installCommand": "npm ci"` to force Next.js handling and override stale
-  dashboard build settings. If routes still 404 after this, the dashboard itself must be
-  corrected: Settings → Build & Deployment → Framework Preset = **Next.js**, Build/Output/Install
-  overrides **off** (default), Root Directory **empty**; and the deployment's Build Logs should
-  show Next.js detected and the route list.
-- **2026-06-16** — **Added email+password sign-in alongside the OTP flow.** Supabase free-tier
-  limits the built-in email sender, throttling the one-time-code login during dev. Added
-  `signInWithPassword` to the sign-in screen (now the default; OTP kept as a fallback toggle)
-  so dev/test logins don't depend on email. Uses the anon key client-side like the rest of
-  auth — no service-role exposure. Note this is a deviation from the OTP-only design in §1/§9;
-  acceptable as an additional method. Also seeded a demo for `klachlan212@gmail.com`: a
-  `profiles` row, one active placement, and 4 standard-tagged sample reflections (synthetic,
-  no patient-identifiable detail, per §4.4). A bcrypt password was set directly on that
-  `auth.users` row via `pgcrypto`. Alternative to raising limits without passwords: configure
-  custom SMTP in Supabase Auth settings.
+### NMBA mapping suggestion: client-side, deterministic — NOT an LLM
+- It's a **join, not inference**: union of standards from logged skills (skill library pre-tagged to ANSAT items) + a small keyword→standard table for the text signal (e.g. "communicat\*"→Std 2, "medication"→Std 4/6, "documented"→Std 6).
+- _Why: an LLM here sends text off-device, costs per call, and is nondeterministic — to replace a join you can already do. Deterministic is also auditable when a CNF asks "why Standard 4?"_
+- **The real work is authoring the `skill → ANSAT item` mapping table** — clinician content only the founder can write. This is the moat and the bottleneck.
+
+### Data model (indicative)
+- Core: `profiles`, `reflections` (with **draft state** for autosave), `skills_logged`
+- Reference: `skill_library`, `ansat_standards` (7 standards / 23 items — internal naming OK), `skill_ansat_map`, `identifier_flags` (so the "to review" pill persists)
+- Reference tables are served to the client; **the client computes the suggestion and runs the check.**
+
+### Vercel
+Hosts the frontend. With Supabase called directly under RLS and processing on-device, v1 needs **few or zero serverless functions** — don't build an API layer you won't use.
+
+### Offline
+Matters here (hospital signal is bad; 9pm is real). Client-side checks already work offline. **Decide: does _save_ require connectivity, or queue locally?** (Open — §7.)
+
+### Expo vs PWA — still open
+Architecture holds either way; only the language the check is written in changes. **Note:** native push weighs toward Expo because the multi-year re-engagement (the fragile joint) depends on reliably reaching students between placements — a stronger reason here than for most apps.
 
 ---
 
-*Keep this file current. When a decision is made, record it in §10 and update §9 status.*
+## 6. Ward guides — a funnel, not a library
+
+**Decision: acquisition funnel, NOT an in-app content library.** Free public guide (SEO/share catch) → soft conversion → in-app priming.
+- _Why generic in-app ward guides are a trap: editorial content rots (protocols vary by state/hospital/year), has no moat against free incumbents (uni packs, Ausmed, YouTube, the CF), and carries scope-of-practice liability with the founder's name on accuracy. Capture features compound; content features are a maintenance liability._
+
+**Content = texture, not facts.** What the ward feels like, what surprises students, likely skills, reflection prompts. **No protocols, no clinical instruction.** Visible boundary line: _"general guidance from experience, not clinical instruction — follow your facility's protocols and your facilitator."_ _Experience and prompts can't go out of date or be wrong per facility; facts can._
+
+**Ungated.** The guide is genuinely free; the app is the upgrade. Conversion sits **after** the value, framed as reciprocity ("you just read the whole guide — free"). _Walling free educational content to harvest emails burns the trust the brand sells._
+
+**Byline = the differentiator, must be verifiably real** (name, face, actual background). "A real nurse who worked this ward" is what Google can't rank around.
+
+**In-app priming:** when a placement block is set, the guide reappears **actionable** — likely skills as one-tap quick-adds (standard-tagged), prompts pre-loaded. **Priming, not prescribing**: optional, skippable, "nothing to fill in now." _Lowers cold-start friction without telling the student what their placement "will" contain (scope liability)._
+
+**Build ONE guide first**, for the actual highest-volume first placement (**med-surg or aged care — not cardiac**; cardiac was illustrative). One guide is a probe to test whether the funnel converts; ten is an accidental content business.
+
+**Durable endgame:** corpus-generated guides ("students on this ward most often log these skills/themes") — uniquely yours, zero maintenance, uncopyable. Impossible until you have students and data. Authored guides are the bridge, not the destination.
+
+---
+
+## 7. Open questions (do not silently resolve these — flag to founder)
+
+- **Onboarding:** reflection prompts fully visible vs. progressively revealed as each fills.
+- **Email placement:** before vs. after first activation (A/B test).
+- **Placement-start date capture:** the prep-guide return trigger is an empty promise without it. Either add a tap-select date on the specialty screen, or change the copy. **Don't ship the promise without the mechanism.**
+- **First-log domain mapping:** auto-assign for the *first* log (near-zero friction) vs. tap-select from the start. Current lean: auto for first, surface choice thereafter.
+- **NMBA 1–5 self-scoring:** currently **no**. Revisit only with a reason.
+- **Offline save:** require connectivity vs. queue locally.
+- **Expo vs PWA.**
+- **The reflection trigger** — what actually gets a tired student to open the flow at all (notification / home nudge / facilitator prompt). **This matters more than any screen and is currently undesigned.** Highest-value open problem.
+- **Data-reusability assumption:** the whole free-tier→paid-layer model assumes 1st-year reflective prose is reusable as 4th-year selection-criteria evidence. Pressure-test how much survives without heavy reprocessing before over-investing in "log everything now."
+
+---
+
+## 8. Waitlist & acquisition (context for build priorities, not part of the app build)
+
+Included so build sequencing stays honest: **don't pour funnel in before the loop retains.**
+
+**Goal is segmentable, test-willing signups — not raw email count.** 80 students you can email "your placement's in 3 weeks — want to try it?" beats 2,000 you can't address.
+
+**Fix the form first** (currently email-only — a permanently degraded asset). Add exactly four fields: university, year of study, month of next placement, "happy to test early?" toggle. _Resist more — every extra field cuts completion. Only collect tester interest if the loop is weeks from testable; otherwise drop the toggle._
+
+**Highest-leverage play:** societies as distribution partners (already in QUT SUN / USC) — bring the co-branded ward guide as free value for their members. Land one, use as proof for the next. Time outreach to the 3–4 week pre-placement anxiety window. **Don't** run paid ads pre-launch, buy lists, or spread across all channels — solo + infant means depth over spread.
+
+---
+
+## Quick do-not index
+- Don't let "ANSAT" appear in any user-facing copy (internal data model only).
+- Don't merge onboarding with the recurring core loop.
+- Don't make NMBA mapping a manual mid-flow gate; infer at save, pre-selected and editable.
+- Don't make New/Renewed a manual toggle (auto-detect from history).
+- Don't let free-text skills into the corpus unnormalised.
+- Don't pre-fill a domain or worked example on the genuine first reflection.
+- Don't claim the export is "safe" / "de-identified"; don't rely on a sign-off as the confidentiality control.
+- Don't run the identifier check or NMBA mapping through a server or LLM (v1).
+- Don't build an in-app ward-guide library; don't gate guide content behind email.
+- Don't build a portfolio dashboard for v1 (back-loaded payoff past the churn window).
+- Don't build an API layer Supabase-under-RLS makes unnecessary.
+- Don't ship features or pour in funnel before the core loop is shown to retain (twice).
+
+---
+---
+
+# Appendix A — Build & deploy discipline (engineering contract)
+
+_Carried over from the prior engineering CLAUDE.md when the product spec above became the body of this file (decision: 19 Jun 2026). The spec says **what** to build; this appendix says **how** to build and ship it without breaking. Both are binding; satisfy the Definition of Done (§A6) before any commit/push._
+
+### A1. Verify before you push
+- Run **`npm run verify`** (lint + typecheck + production build) and see it **GREEN** before every commit/push — no exceptions, even one-liners. CI (`.github/workflows/ci.yml`) runs the same checks; a red CI is never merged.
+- **A green build ≠ a working deploy.** Know which runtime each file targets (Edge vs Node serverless vs browser) and confirm its imports are legal there. If `verify` can't run (e.g. no network), say so in the reply rather than claiming a pass.
+
+### A2. Middleware / runtime (hard-won — do not relearn)
+- **Do not add a Next.js `middleware.ts` on this project.** Every variant 500'd on Vercel (`MIDDLEWARE_INVOCATION_FAILED` / `__dirname is not defined` on Edge; CJS-vs-ESM on the Node runtime). Auth redirects live in the **client guard `src/auth/guard.tsx`** wired into the route-group layouts. Gate in a client/server component, never middleware.
+- Keep Node-only deps (e.g. the full `@supabase/supabase-js`) out of any Edge-runtime bundle.
+
+### A3. Security & data (the spec's §4/§5 are binding; this restates the invariants)
+- **RLS on every table from its first migration**, deny-by-default, then the narrowest policy. Rows owner-scoped via `auth.uid()`. Identity/role derived server-side, never trusted from the client.
+- Only the Supabase **anon key** ships to the browser (safe only because RLS holds); the **service-role key never** touches client code.
+- **No reflection content or PII** in logs, analytics, or error payloads. The identifier check and NMBA mapping run **on-device, deterministic** — never via a server or LLM (§5).
+- Patch security advisories immediately (`npm audit`, Supabase advisors) on their own commit; keep `package-lock.json` committed and installs reproducible.
+
+### A4. Infra facts (operator is **not** versed in Vercel/Supabase — inspect & act via MCP/git, explain in plain language; get a yes before production pushes)
+- **Supabase:** project ref `kkytglabcwevvnjmmrhy` (`prac-app-database`, region `ap-southeast-2` Sydney, **free plan**). RLS-enabled tables incl. the core set + the hospital directory (`hospitals`, `hospital_tips`, `hospital_reference_cards`, `hospital_tip_votes`, `hospital_requests`); `profiles.is_moderator` flags global moderators. 11 universities + 7 RN ANSAT standards seeded; hospital directory seeded (6 VIC hospitals, 12 published tips). Demo user `klachlan212@gmail.com` / `PracDemo2026!` (now a moderator) with seeded profile + placement + reflections. Security advisors (post-hardening 0008–0011): `search_path` now pinned on **all** SECURITY DEFINER fns; `hospital_tip_votes` and `anon_action_log` RLS-enabled-no-policy are **intentional** (deny-all, definer-RPC-only); `submit_hospital_tip`/`request_hospital`/`cast_hospital_vote` anon-executable is **intentional** (the anonymous-write feature, now per-device rate-limited). Remaining: leaked-password protection (Auth setting, **needs Pro plan**).
+- **Vercel:** project `prac-app` (team `klachlan212-6694s-projects`), framework Next.js. **Canonical production URL: `https://prac-app-klachlan212-6694s-projects.vercel.app`** — always test this, not a per-deployment `prac-<hash>` URL (those are frozen/old). **Deployment Protection (Vercel Authentication) is ON** → 401 for anyone not logged into the Vercel account; disable it (or use a share link) for open/incognito demo.
+
+### A5. Git & workflow
+- Develop on **`claude/confident-turing-wspzot`**; **never push `main`/production without explicit permission**; no PRs unless asked. Descriptive commits; one logical change each.
+
+### A6. Definition of Done
+- [ ] `npm run verify` green (lint, typecheck, build); Edge-deployed code free of Node-only APIs (A2).
+- [ ] Access control reviewed (A3): users reach only their own rows; new tables deny-by-default with the narrowest RLS; no content to any aggregate/admin path; identity server-derived.
+- [ ] No secrets, reflection content, or PII in code, logs, commits, or error paths.
+- [ ] No new/known-vulnerable dependency; advisories patched; none that sends content off-device.
+- [ ] UI meets a11y bar: ≥44px touch targets, dark-mode parity, visible focus, the app never loses text (autosave).
+- [ ] "ANSAT" appears in **no** user-facing copy (§0.2); honesty copy respected (§4) — never "safe"/"de-identified".
+- [ ] Committed with a clear message and pushed to the feature branch; anything skipped/unverified is stated plainly.
+
+### A7. Decisions log (condensed)
+- Migrations + seeds applied to Supabase (Sydney); RLS verified.
+- **Production deploy saga, resolved:** `main` was a static Hello-World placeholder → app promoted to `main`; middleware removed entirely (it 500'd in every form) in favour of the client guard; the "all routes 404" was a wrong-URL + Vercel build-settings issue, plus Deployment Protection. App now serves on the canonical domain. **Do not reintroduce middleware.**
+- Added email+password sign-in to dodge Supabase free-tier OTP email limits. **Tension:** the spec (§2) wants **passwordless/magic-link** for the multi-year handoff — treat password as a dev-only convenience and revisit before v1.
+- **19 Jun 2026:** product spec (§§0–8) adopted as the body of CLAUDE.md; this appendix preserves the engineering guardrails (per "merge into one CLAUDE.md" decision). Next: re-plan the v1 build around the core loop (rule §0.1).
+- **19 Jun 2026 — v1 redesign built** on `claude/confident-turing-wspzot` (from the founder's `designs/*.html`): brand foundation (Fraunces/DM Sans, teal/sage/paper, **light-only**); core-loop data model on Supabase (migration `0003`: structured prompts + draft state, ANSAT 23 items, `skill_library`/`skill_ansat_map`, `skills_logged` + `identifier_flags`, RLS clean); and every student surface rebuilt — sign-in, onboarding (tap-select), reflections home, the reflect→skills→NMBA→saved loop (autosave, on-device identifier nudge, auto New/Renewed, inferred mapping), export + **mandatory identifier gate**, settings — plus one public ward guide (med-surg) + in-app priming. UI renders **"NMBA standards"** (never ANSAT); honesty copy holds. **Deferred / founder TODO:** admin module; real `skill→ANSAT` map + real guide byline (the moat, §5/§6); email-first/magic-link onboarding (§2/§7); revisit password→passwordless. **Production (`main`) untouched** — redesign awaits a ship decision.
+- **20 Jun 2026 — `DESIGN.md` added** (portable as-built design reference for designing new features; complements this spec + `designs/*.html`).
+- **20 Jun 2026 — Hospital Directory built** on `claude/confident-turing-wspzot` (founder request; a deliberate exception to §0.1/§6 — new community-content surface). Public `/hospitals` (roster in-code) + `/hospitals/[slug]` profile: 5 categories, populate/hybrid/sparse states, anonymous toggle-voting, freshness fade + refresh banner, deterministic ranking, submission form. **Backend applied to live Supabase (migration `0004`):** `hospitals`/`hospital_tips`/`hospital_reference_cards`/`hospital_tip_votes`, `profiles.is_moderator`; anonymous **submit → moderation queue** + **vote** via hardened SECURITY DEFINER RPCs (`submit_hospital_tip`, `cast_hospital_vote`); published-only public reads, moderator-only review via inline-subquery RLS. Moderation queue added to `/admin`; "Hospitals" added to in-app nav. **Best-effort only:** anonymous-write rate-limiting/captcha is a follow-up; seed tips are hedged placeholders (real verified content is founder work). **Production (`main`) still untouched.**
+- **20 Jun 2026 — Hospital moderator management** (migration `0005`): moderators can add/edit hospitals and add/edit/delete reference cards from `/admin` (`HospitalAdmin`), gated by moderator-only insert/update/delete RLS (inline `is_moderator` subquery). Roster is now **DB-driven** — directory list + profile fetch hospitals from Supabase (`fetchHospitals`/`fetchHospitalBySlug`), so additions appear without a redeploy; the in-code `HOSPITALS` array is kept only for `generateStaticParams` + metadata of the seeded six. RLS verified by role simulation (moderator writes pass, non-moderator denied). **Production (`main`) still untouched.**
+- **21 Jun 2026 — Session: bug sweep, nav, features, security hardening, org removal** (`claude/confident-turing-wspzot`). Built: bottom **tab-bar nav** (Home/Reflect/Resources/Profile) + Resources/Profile hubs + a Today/streak Home; filterable **`/history`**; item-level (23-item) mapping now persisted through sync; **Back** nav in the reflect flow; `hospitals.state` + state filter (**0006**); **`hospital_requests`** capture queue + `request_hospital` RPC (**0007**). Fixed (QA sweep): silent "Saved" with no active placement; export dropping so-what/now-what; identifier-dismissal wipe on autosave; auth-hang on network error; returning-user re-onboard (profile pull/fallback). **Security audit → hardening (0008–0010):** revoked write grants on read-only reference tables; pinned `search_path` on all SECURITY DEFINER fns; URL allowlist on ref-card `source_url`; reflection length CHECKs; **per-device rate limiting** on the anon hospital RPCs (`anon_action_log`, 10 submits/60 votes per hour). **Removed the unused organisation/cohort-admin system (0011):** dropped `organizations`/`memberships`/`invitations` + `create_organization`/`accept_invitation`/`get_org_adherence`; `/admin` is now **moderator-only**; onboarding invite hook removed. Deleted dead code (`src/auth/server.ts`, unused data helpers). **Production (`main`) still untouched.**

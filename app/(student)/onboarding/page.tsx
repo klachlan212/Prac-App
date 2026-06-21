@@ -3,41 +3,61 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
-import { createClient } from '@/src/auth/client'
-import { getUniversities } from '@/src/data/standards'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
-import type { University } from '@/src/data/types'
-import { Button, Card, Field, Input } from '@/src/ui/components'
+import { WARD_TO_GUIDE } from '@/src/content/guides'
+import { Button, Card } from '@/src/ui/components'
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+// First-run setup (spec §2). Tap-select only — the one text field (email) was
+// captured at sign-in. Goal: a reachable identity → one saved artifact, least
+// friction. Email-first sequencing + magic-link (spec §2/§7) is a flagged open
+// question handled with the auth flow, not here.
+
+type Step = 'welcome' | 'context' | 'year' | 'specialty' | 'ack' | 'success'
+type Context = 'placement' | 'upcoming' | 'exploring'
+
+const YEARS: Array<{ label: string; level?: number }> = [
+  { label: '1st year', level: 1 },
+  { label: '2nd year', level: 2 },
+  { label: '3rd year', level: 3 },
+  { label: 'Final year', level: 4 },
+  { label: 'Postgrad / accelerated' },
+]
+const SPECIALTIES = [
+  'Med-surg',
+  'Aged care',
+  'Mental health',
+  'Emergency',
+  'Paediatrics',
+  'Community',
+  'Not sure yet',
+  'None of these',
+]
+const PROGRESS: Record<Step, number> = {
+  welcome: 8,
+  context: 30,
+  year: 50,
+  specialty: 70,
+  ack: 88,
+  success: 100,
+}
+
+function deriveName(email?: string | null): string {
+  if (!email) return 'Student'
+  const local = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim()
+  return local ? local.replace(/\b\w/g, (c) => c.toUpperCase()) : 'Student'
+}
 
 export default function OnboardingPage() {
   const router = useRouter()
   const { user, loading } = useUser()
-  const [universities, setUniversities] = useState<University[]>([])
+
+  const [step, setStep] = useState<Step>('welcome')
+  const [context, setContext] = useState<Context | null>(null)
+  const [year, setYear] = useState<(typeof YEARS)[number] | null>(null)
+  const [specialty, setSpecialty] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Profile fields
-  const [fullName, setFullName] = useState('')
-  const [universityId, setUniversityId] = useState('')
-  const [program, setProgram] = useState('')
-  const [cohort, setCohort] = useState('')
-  const [yearLevel, setYearLevel] = useState('')
-  const [reminderDay, setReminderDay] = useState(0)
-  const [reminderTime, setReminderTime] = useState('18:00')
-  const [ack, setAck] = useState(false)
-
-  // First placement
-  const [ward, setWard] = useState('')
-  const [hospital, setHospital] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-
-  useEffect(() => {
-    void getUniversities().then(setUniversities)
-  }, [])
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -51,155 +71,347 @@ export default function OnboardingPage() {
     })
   }, [user, router])
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  async function finishSetup() {
     if (!user) return
-    if (!ack) {
-      setError('Please acknowledge the confidentiality note to continue.')
-      return
-    }
-    setError(null)
     setBusy(true)
+    setError(null)
     try {
       await saveProfile({
         id: user.id,
-        fullName: fullName.trim(),
-        universityId: universityId || undefined,
-        program: program.trim() || undefined,
-        cohort: cohort.trim() || undefined,
-        yearLevel: yearLevel ? Number(yearLevel) : undefined,
+        fullName: deriveName(user.email),
         nurseTrack: 'RN',
-        reminderDay,
-        reminderTime,
+        yearLevel: year?.level,
+        reminderDay: 0,
         taggingOn: true,
       })
-      await createPlacement(user.id, {
-        ward: ward.trim() || undefined,
-        hospital: hospital.trim() || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      })
-
-      // If the student arrived from an organization invitation, join them now.
-      const token = new URLSearchParams(window.location.search).get('invite')
-      if (token) {
-        await createClient().rpc('accept_invitation', { p_token: token })
+      const ward =
+        specialty && specialty !== 'Not sure yet' && specialty !== 'None of these'
+          ? specialty
+          : undefined
+      // "Just looking around" is an orientation path — don't create a placeholder
+      // placement (it would be an empty, misleading record). One is created lazily
+      // if/when they actually log a shift.
+      if (context !== 'exploring') {
+        await createPlacement(user.id, { ward })
       }
 
-      router.replace('/reflections')
+      setStep('success')
     } catch {
-      setError('Something went wrong saving your profile. It is saved on your device; try again.')
+      setError('Something went wrong. Your details are saved on your device — try again.')
+    } finally {
       setBusy(false)
     }
   }
 
-  if (loading) return null
+  if (loading || !user) return null
+
+  const guideSlug = specialty ? WARD_TO_GUIDE[specialty] : undefined
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome to Prac</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        A couple of details, then your first placement.
-      </p>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-8">
+      <div className="mb-8 h-1 w-full overflow-hidden rounded-full bg-sage-200">
+        <div
+          className="h-full rounded-full bg-teal transition-[width] duration-500"
+          style={{ width: `${PROGRESS[step]}%` }}
+        />
+      </div>
 
-      <form onSubmit={submit} className="mt-6 space-y-6">
-        <Card className="space-y-4">
-          <h2 className="font-medium">About you</h2>
-          <Field label="Full name" htmlFor="fullName">
-            <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          </Field>
-          <Field label="University" htmlFor="university">
-            <select
-              id="university"
-              value={universityId}
-              onChange={(e) => setUniversityId(e.target.value)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base dark:border-slate-700 dark:bg-slate-900"
-            >
-              <option value="">Select…</option>
-              {universities.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
+      <div className="flex flex-1 flex-col">
+        {step === 'welcome' && (
+          <div className="flex flex-1 flex-col">
+            <div className="font-display text-3xl font-semibold tracking-tight">
+              Prac<span className="text-teal">.</span>
+            </div>
+            <div className="mt-auto" />
+            <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-sage-200 bg-sage-50 px-3 py-1.5 text-xs font-medium">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[9px] font-bold text-teal-ink">
+                RN
+              </span>
+              Built by a registered nurse
+            </span>
+            <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight">
+              Your placement, remembered — every shift, every year<span className="text-teal">.</span>
+            </h1>
+            <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
+              Write a short reflection, log the skills it surfaced, and Prac. maps it to your NMBA
+              standards into a record you own. Free for your whole degree.
+            </p>
+            <div className="mt-8">
+              <Button onClick={() => setStep('context')}>Get started</Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'context' && (
+          <Stepper
+            eyebrow="So we start in the right place"
+            title="Where are you right now?"
+            lede="No wrong answer — this just sets up your first screen."
+          >
+            <div className="space-y-3">
+              <Choice
+                emoji="🏥"
+                title="On placement now"
+                sub="Let’s log your first shift"
+                onClick={() => {
+                  setContext('placement')
+                  setStep('year')
+                }}
+              />
+              <Choice
+                emoji="📅"
+                title="Placement this semester"
+                sub="Get set up before day one"
+                onClick={() => {
+                  setContext('upcoming')
+                  setStep('year')
+                }}
+              />
+              <Choice
+                emoji="🧭"
+                title="Just looking around"
+                sub="Explore what Prac. does"
+                onClick={() => {
+                  setContext('exploring')
+                  setStep('year')
+                }}
+              />
+            </div>
+          </Stepper>
+        )}
+
+        {step === 'year' && (
+          <Stepper
+            eyebrow="Quick setup · 1 of 2"
+            title="What year are you in?"
+            lede="So your reflections map to the right NMBA standards."
+          >
+            <div className="flex flex-wrap gap-2.5">
+              {YEARS.map((y) => (
+                <TapChip key={y.label} active={year?.label === y.label} onClick={() => setYear(y)}>
+                  {y.label}
+                </TapChip>
               ))}
-            </select>
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Program" htmlFor="program">
-              <Input id="program" value={program} onChange={(e) => setProgram(e.target.value)} placeholder="e.g. BN" />
-            </Field>
-            <Field label="Cohort" htmlFor="cohort">
-              <Input id="cohort" value={cohort} onChange={(e) => setCohort(e.target.value)} placeholder="e.g. 2026" />
-            </Field>
-          </div>
-          <Field label="Year level" htmlFor="yearLevel">
-            <Input
-              id="yearLevel"
-              inputMode="numeric"
-              value={yearLevel}
-              onChange={(e) => setYearLevel(e.target.value.replace(/\D/g, ''))}
-              placeholder="1–4"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Reminder day" htmlFor="reminderDay">
-              <select
-                id="reminderDay"
-                value={reminderDay}
-                onChange={(e) => setReminderDay(Number(e.target.value))}
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base dark:border-slate-700 dark:bg-slate-900"
-              >
-                {DAYS.map((d, i) => (
-                  <option key={d} value={i}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Reminder time" htmlFor="reminderTime">
-              <Input id="reminderTime" type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} />
-            </Field>
-          </div>
-        </Card>
+            </div>
+            <div className="mt-auto pt-8">
+              <Button disabled={!year} onClick={() => setStep('specialty')}>
+                Continue
+              </Button>
+            </div>
+          </Stepper>
+        )}
 
-        <Card className="space-y-4">
-          <h2 className="font-medium">Your first placement</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Anything can be left blank and edited later.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Ward" htmlFor="ward">
-              <Input id="ward" value={ward} onChange={(e) => setWard(e.target.value)} />
-            </Field>
-            <Field label="Hospital" htmlFor="hospital">
-              <Input id="hospital" value={hospital} onChange={(e) => setHospital(e.target.value)} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Start date" htmlFor="startDate">
-              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </Field>
-            <Field label="Expected end date" htmlFor="endDate">
-              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </Field>
-          </div>
-        </Card>
+        {step === 'specialty' && (
+          <Stepper
+            eyebrow="Quick setup · 2 of 2"
+            title={
+              context === 'placement'
+                ? 'Which ward are you on?'
+                : context === 'exploring'
+                  ? 'Which ward are you curious about?'
+                  : 'Which placement is coming up?'
+            }
+            lede="Pick the closest — you can change it any time."
+          >
+            <div className="flex flex-wrap gap-2.5">
+              {SPECIALTIES.map((s) => (
+                <TapChip key={s} active={specialty === s} onClick={() => setSpecialty(s)}>
+                  {s}
+                </TapChip>
+              ))}
+            </div>
+            <div className="mt-auto pt-8">
+              <Button disabled={!specialty} onClick={() => setStep('ack')}>
+                Continue
+              </Button>
+            </div>
+          </Stepper>
+        )}
 
-        <label className="flex items-start gap-3 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
-          <input
-            type="checkbox"
-            checked={ack}
-            onChange={(e) => setAck(e.target.checked)}
-            className="mt-1 h-5 w-5"
-          />
-          <span className="text-slate-600 dark:text-slate-300">
-            I understand reflections are my professional record and I will not include
-            patient-identifiable information.
-          </span>
-        </label>
+        {step === 'ack' && (
+          <Stepper
+            eyebrow="One thing before you start"
+            title="Your record, kept confidential."
+            lede="Reflections are your professional record — not assessment evidence. Keep patient-identifiable details out; Prac. flags common ones, but the rest is on you."
+          >
+            <div className="mt-auto space-y-3 pt-6">
+              {error && <p className="text-sm text-flag">{error}</p>}
+              <Button onClick={finishSetup} disabled={busy}>
+                {busy ? 'Setting up…' : 'I understand — set me up'}
+              </Button>
+            </div>
+          </Stepper>
+        )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? 'Setting up…' : 'Start reflecting'}
-        </Button>
-      </form>
+        {step === 'success' && (
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal text-3xl text-teal-ink shadow-[0_12px_36px_rgba(78,205,196,.4)]">
+              ✓
+            </div>
+            <h1 className="mt-6 font-display text-2xl font-semibold tracking-tight">
+              {context === 'exploring' ? 'You’re in' : 'You’re set up'}
+              <span className="text-teal">.</span>
+            </h1>
+            <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-ink-soft">
+              {context === 'placement'
+                ? 'Your placement’s ready. Let’s capture your first shift.'
+                : context === 'upcoming'
+                  ? 'Your placement’s saved and ready when you are.'
+                  : 'Have a look around — nothing to fill in yet. Here’s where everything lives.'}
+            </p>
+
+            {context === 'exploring' ? (
+              <>
+                <div className="mt-6 w-full space-y-2.5 text-left">
+                  <Signpost emoji="📝" title="Reflect" sub="After a shift — about two minutes." />
+                  <Signpost emoji="📚" title="Resources" sub="Hospital guides and ward tips, free." />
+                  <Signpost
+                    emoji="🌱"
+                    title="Your record"
+                    sub="What you log builds toward grad applications."
+                  />
+                </div>
+                {guideSlug && (
+                  <button
+                    onClick={() => router.push(`/guides/${guideSlug}`)}
+                    className="mt-4 flex w-full items-center gap-3 rounded-card border border-sage-200 bg-sage-50 p-4 text-left shadow-card transition hover:border-sage-300"
+                  >
+                    <span aria-hidden>🏥</span>
+                    <span className="flex-1 text-sm font-medium">
+                      Start with the {specialty} ward guide
+                    </span>
+                    <span className="text-sage-300" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                )}
+                <div className="mt-8 w-full">
+                  <Button onClick={() => router.replace('/reflections')}>
+                    Explore Prac<span aria-hidden>.</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Card className="mt-6 flex items-start gap-3 border-sage-200 bg-sage-50 text-left">
+                  <span aria-hidden>🌱</span>
+                  <span className="text-sm leading-relaxed text-ink-soft">
+                    Everything you log now quietly builds the record your final-year self uses for grad
+                    applications.
+                  </span>
+                </Card>
+                <div className="mt-8 w-full">
+                  {context === 'placement' ? (
+                    <Button onClick={() => router.replace('/reflections/new')}>
+                      Write your first reflection<span aria-hidden>.</span>
+                    </Button>
+                  ) : (
+                    <Button onClick={() => router.replace('/reflections')}>
+                      Go to your reflections
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </main>
+  )
+}
+
+function Stepper({
+  eyebrow,
+  title,
+  lede,
+  children,
+}: {
+  eyebrow: string
+  title: string
+  lede: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-deep">
+        <span className="h-1.5 w-1.5 rounded-full bg-teal" aria-hidden />
+        {eyebrow}
+      </p>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{lede}</p>
+      <div className="mt-6 flex flex-1 flex-col">{children}</div>
+    </div>
+  )
+}
+
+function Signpost({ emoji, title, sub }: { emoji: string; title: string; sub: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-card border border-sage-200 bg-surface p-3.5 shadow-card">
+      <span
+        className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100 text-lg"
+        aria-hidden
+      >
+        {emoji}
+      </span>
+      <span className="flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="block text-[13px] text-ink-soft">{sub}</span>
+      </span>
+    </div>
+  )
+}
+
+function Choice({
+  emoji,
+  title,
+  sub,
+  onClick,
+}: {
+  emoji: string
+  title: string
+  sub: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3.5 rounded-card border border-sage-200 bg-surface p-4 text-left shadow-card transition hover:-translate-y-px hover:border-sage-300"
+    >
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sage-100 text-xl" aria-hidden>
+        {emoji}
+      </span>
+      <span className="flex-1">
+        <span className="block text-[15px] font-semibold">{title}</span>
+        <span className="block text-[13px] text-ink-soft">{sub}</span>
+      </span>
+      <span className="text-sage-300" aria-hidden>
+        ›
+      </span>
+    </button>
+  )
+}
+
+function TapChip({
+  active,
+  onClick,
+  children,
+}: {
+  active?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`min-h-[44px] rounded-2xl border px-4 text-[15px] font-medium shadow-card transition ${
+        active
+          ? 'border-teal bg-teal text-teal-ink'
+          : 'border-sage-200 bg-surface text-ink hover:border-sage-300'
+      }`}
+    >
+      {children}
+    </button>
   )
 }

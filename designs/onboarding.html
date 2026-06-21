@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prac. — onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* calm ground */
+    --paper:#f6f5ef;        /* warm off-white */
+    --sage-50:#eef2e9;
+    --sage-100:#e3ebdd;
+    --sage-200:#cdddc6;
+    --sage-300:#aecaa6;
+    --eucalyptus:#7fa08a;
+    --ink:#2c3a30;          /* deep green-grey, not clinical black */
+    --ink-soft:#5d6b60;
+    /* confident anchor */
+    --teal:#4ecdc4;
+    --teal-deep:#2fb3aa;
+    --teal-ink:#176d68;
+    --white:#ffffff;
+    --shadow:0 1px 2px rgba(44,58,48,.04),0 12px 32px rgba(44,58,48,.08);
+    --shadow-sm:0 1px 2px rgba(44,58,48,.05),0 4px 12px rgba(44,58,48,.06);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'DM Sans',system-ui,sans-serif;
+    background:
+      radial-gradient(120% 80% at 50% -10%, var(--sage-100) 0%, transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:24px;
+  }
+
+  /* phone frame */
+  .device{
+    width:390px;max-width:100%;height:780px;max-height:92vh;
+    background:var(--paper);
+    border-radius:42px;
+    box-shadow:var(--shadow), inset 0 0 0 1px rgba(44,58,48,.04);
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .notch{height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .notch::after{content:"";width:90px;height:5px;border-radius:3px;background:rgba(44,58,48,.12)}
+
+  /* progress */
+  .progress{padding:4px 28px 0;height:18px;flex:0 0 auto}
+  .progress-track{height:4px;border-radius:99px;background:var(--sage-200);overflow:hidden}
+  .progress-fill{height:100%;width:0;background:var(--teal);border-radius:99px;transition:width .5s cubic-bezier(.16,1,.3,1)}
+
+  /* screen area */
+  .stage{flex:1 1 auto;position:relative;overflow:hidden}
+  .screen{
+    position:absolute;inset:0;
+    padding:20px 28px 40px;
+    display:flex;flex-direction:column;
+    opacity:0;transform:translateX(24px);
+    pointer-events:none;
+    transition:opacity .42s ease, transform .42s cubic-bezier(.16,1,.3,1);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .screen.active{opacity:1;transform:none;pointer-events:auto}
+  .screen.left{transform:translateX(-24px)}
+
+  .eyebrow{
+    font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--teal-ink);margin-bottom:14px;display:flex;align-items:center;gap:7px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:99px;background:var(--teal)}
+
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:30px;line-height:1.12;letter-spacing:-.01em;
+    margin-bottom:12px;
+  }
+  h1 .stop{color:var(--teal-deep)}
+  .lede{font-size:15.5px;line-height:1.5;color:var(--ink-soft);margin-bottom:8px}
+
+  .grow{flex:1 1 auto;min-height:16px}
+
+  /* choice cards */
+  .choices{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+  .choice{
+    display:flex;align-items:center;gap:14px;
+    background:var(--white);border:1.5px solid var(--sage-200);
+    border-radius:var(--radius);padding:16px 16px;
+    cursor:pointer;text-align:left;width:100%;
+    box-shadow:var(--shadow-sm);
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+    font-family:inherit;
+  }
+  .choice:hover{transform:translateY(-1px);border-color:var(--sage-300)}
+  .choice:active{transform:translateY(0)}
+  .choice.sel{border-color:var(--teal);background:#f0fbfa}
+  .choice .ic{
+    width:42px;height:42px;flex:0 0 auto;border-radius:13px;
+    background:var(--sage-100);display:flex;align-items:center;justify-content:center;font-size:21px;
+    transition:background .15s ease;
+  }
+  .choice.sel .ic{background:var(--teal);}
+  .choice .ct{flex:1 1 auto}
+  .choice .ct b{display:block;font-size:15.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .choice .ct span{display:block;font-size:13px;line-height:1.35;color:var(--ink-soft)}
+  .choice .chev{color:var(--sage-300);font-size:18px;flex:0 0 auto}
+
+  /* chip grid (years / specialty) */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{
+    font-family:inherit;font-size:14.5px;font-weight:500;
+    padding:12px 18px;border-radius:14px;
+    background:var(--white);border:1.5px solid var(--sage-200);
+    color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);
+    transition:transform .12s ease, border-color .12s, background .12s;
+  }
+  .chip:hover{transform:translateY(-1px);border-color:var(--sage-300)}
+  .chip.sel{background:var(--teal);border-color:var(--teal);color:#06403c;font-weight:600}
+  .chip.wide{flex:1 1 100%;text-align:left}
+
+  /* email */
+  .field{margin-top:24px}
+  .field label{font-size:13px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:8px}
+  .field input{
+    width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+    padding:15px 16px;border-radius:14px;border:1.5px solid var(--sage-200);
+    background:var(--white);box-shadow:var(--shadow-sm);outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus{border-color:var(--teal)}
+  .field input::placeholder{color:#a9b3a8}
+  .reassure{font-size:12.5px;color:var(--ink-soft);margin-top:10px;display:flex;gap:7px;align-items:flex-start;line-height:1.4}
+  .reassure .mk{color:var(--teal-deep);flex:0 0 auto;margin-top:1px}
+
+  /* primary button */
+  .cta{
+    margin-top:18px;flex:0 0 auto;
+    font-family:inherit;font-size:16px;font-weight:600;
+    background:var(--teal);color:#06403c;border:none;border-radius:16px;
+    padding:16px;cursor:pointer;width:100%;
+    box-shadow:0 6px 18px rgba(78,205,196,.35);
+    transition:transform .14s ease, box-shadow .14s, opacity .14s;
+  }
+  .cta:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(78,205,196,.42)}
+  .cta:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+  .ghost{
+    background:none;border:none;color:var(--ink-soft);font-family:inherit;font-size:14px;
+    font-weight:500;cursor:pointer;padding:12px;margin-top:4px;width:100%;
+  }
+  .ghost:hover{color:var(--ink)}
+
+  /* trust badge */
+  .badge{
+    display:inline-flex;align-items:center;gap:9px;
+    background:var(--sage-50);border:1px solid var(--sage-200);
+    padding:9px 14px;border-radius:99px;font-size:13px;font-weight:500;color:var(--ink);
+    margin-bottom:22px;
+  }
+  .badge .av{width:24px;height:24px;border-radius:99px;background:linear-gradient(135deg,var(--teal),var(--eucalyptus));
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+  /* hero mark */
+  .mark{font-family:'Fraunces',serif;font-weight:600;font-size:34px;color:var(--ink);margin-bottom:auto}
+  .mark .stop{color:var(--teal-deep)}
+
+  /* reflection scaffold (activation) */
+  .scaffold{margin-top:20px;background:var(--white);border-radius:var(--radius);border:1.5px solid var(--sage-200);
+    box-shadow:var(--shadow-sm);overflow:hidden}
+  .scaffold .sc-head{padding:14px 16px;border-bottom:1px solid var(--sage-100);display:flex;align-items:center;gap:10px}
+  .scaffold .sc-head .tag{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--teal-ink);background:#e6f7f5;padding:4px 9px;border-radius:7px}
+  .scaffold .sc-head b{font-size:14px;font-weight:600}
+  .sc-row{padding:13px 16px;border-bottom:1px solid var(--sage-50);display:flex;align-items:center;gap:11px;color:var(--ink-soft);font-size:13.5px}
+  .sc-row .tick{width:20px;height:20px;border-radius:99px;border:2px solid var(--sage-200);flex:0 0 auto}
+  .sc-row.done .tick{background:var(--teal);border-color:var(--teal);position:relative}
+  .sc-row.done .tick::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700}
+  .sc-row.done{color:var(--ink)}
+  .sc-active{padding:14px 16px;background:#f5fcfb}
+  .sc-active label{font-size:12px;font-weight:600;color:var(--teal-ink);display:block;margin-bottom:8px}
+  .sc-active textarea{width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);border:1.5px solid var(--teal);
+    border-radius:12px;padding:11px;resize:none;outline:none;background:var(--white);line-height:1.45}
+  .sc-active textarea::placeholder{color:#9fb6b2}
+
+  /* prep guide card (looker activation) */
+  .prep{margin-top:20px;background:var(--white);border-radius:var(--radius);border:1.5px solid var(--sage-200);
+    box-shadow:var(--shadow-sm);overflow:hidden}
+  .prep .ph{padding:18px 18px 14px;background:linear-gradient(135deg,#eef7f0,#e6f5f3)}
+  .prep .ph .k{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-ink);margin-bottom:6px}
+  .prep .ph h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--ink)}
+  .prep ul{list-style:none;padding:6px 18px 14px}
+  .prep li{display:flex;gap:11px;padding:9px 0;font-size:13.5px;color:var(--ink);border-bottom:1px solid var(--sage-50);align-items:center}
+  .prep li:last-child{border-bottom:none}
+  .prep li .b{width:7px;height:7px;border-radius:99px;background:var(--teal);flex:0 0 auto}
+
+  /* success */
+  .celebrate{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;height:100%}
+  .seal{width:96px;height:96px;border-radius:99px;background:linear-gradient(135deg,var(--teal),var(--eucalyptus));
+    display:flex;align-items:center;justify-content:center;font-size:44px;margin-bottom:24px;
+    box-shadow:0 12px 36px rgba(78,205,196,.4);animation:pop .6s cubic-bezier(.16,1.4,.4,1)}
+  @keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+  .celebrate h1{margin-bottom:14px}
+  .celebrate .lede{margin-bottom:0}
+  .future{margin-top:26px;background:var(--sage-50);border:1px solid var(--sage-200);border-radius:16px;
+    padding:16px;font-size:13.5px;line-height:1.5;color:var(--ink-soft);text-align:left;display:flex;gap:11px}
+  .future .mk{font-size:18px;flex:0 0 auto}
+
+  .restart{position:absolute;top:8px;right:14px;z-index:10;background:rgba(255,255,255,.7);border:1px solid var(--sage-200);
+    border-radius:99px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft);padding:6px 11px;cursor:pointer}
+  .caption{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="device">
+  <button class="restart" onclick="restart()">↺ replay</button>
+  <div class="notch"></div>
+  <div class="progress"><div class="progress-track"><div class="progress-fill" id="pf"></div></div></div>
+  <div class="stage" id="stage">
+
+    <!-- 1: WELCOME -->
+    <section class="screen active" data-screen="welcome">
+      <div class="mark">Prac<span class="stop">.</span></div>
+      <div class="badge"><span class="av">RN</span> Built by a registered nurse</div>
+      <h1>Your placement, remembered — every shift, every year<span class="stop">.</span></h1>
+      <p class="lede">Log shifts, build reflections that map to your ANSAT standards, and turn placement into evidence you'll actually use. Free for your whole degree.</p>
+      <div class="grow"></div>
+      <button class="cta" onclick="go('email')">Get started</button>
+      <button class="ghost" onclick="go('email')">I already have an account</button>
+    </section>
+
+    <!-- 2: EMAIL -->
+    <section class="screen" data-screen="email">
+      <div class="eyebrow"><span class="dot"></span>One quick thing</div>
+      <h1>Log in once. Prac. remembers across your whole degree<span class="stop">.</span></h1>
+      <p class="lede">Placements span years. Drop your email and everything you log stays with you — first year to grad, new phone or not.</p>
+      <div class="field">
+        <label for="em">Email</label>
+        <input id="em" type="email" inputmode="email" autocomplete="email" placeholder="you@student.edu.au" oninput="checkEmail()">
+        <div class="reassure"><span class="mk">✦</span><span>We send a magic link — no password to forget between placements. No spam, ever.</span></div>
+      </div>
+      <div class="grow"></div>
+      <button class="cta" id="emCta" disabled onclick="go('context')">Send my link</button>
+    </section>
+
+    <!-- 3: CONTEXT BRANCH -->
+    <section class="screen" data-screen="context">
+      <div class="eyebrow"><span class="dot"></span>So we start in the right place</div>
+      <h1>Where are you right now<span class="stop">?</span></h1>
+      <p class="lede">No wrong answer — this just sets up your first screen.</p>
+      <div class="choices">
+        <button class="choice" onclick="pickContext('placement')">
+          <span class="ic">🏥</span>
+          <span class="ct"><b>On placement now</b><span>Let's log your first shift</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="choice" onclick="pickContext('upcoming')">
+          <span class="ic">📅</span>
+          <span class="ct"><b>Placement this semester</b><span>Get prepped before day one</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="choice" onclick="pickContext('exploring')">
+          <span class="ic">🧭</span>
+          <span class="ct"><b>Just looking around</b><span>Explore what Prac. does</span></span>
+          <span class="chev">›</span>
+        </button>
+      </div>
+      <div class="grow"></div>
+    </section>
+
+    <!-- 4: YEAR (tap select) -->
+    <section class="screen" data-screen="year">
+      <div class="eyebrow"><span class="dot"></span>Quick setup · 1 of 2</div>
+      <h1>What year are you in<span class="stop">?</span></h1>
+      <p class="lede">So your reflections map to the right ANSAT standards.</p>
+      <div class="chips" id="yearChips">
+        <button class="chip" onclick="pickChip(this,'year','1st year')">1st year</button>
+        <button class="chip" onclick="pickChip(this,'year','2nd year')">2nd year</button>
+        <button class="chip" onclick="pickChip(this,'year','3rd year')">3rd year</button>
+        <button class="chip" onclick="pickChip(this,'year','Final year')">Final year</button>
+        <button class="chip" onclick="pickChip(this,'year','Postgrad / accelerated')">Postgrad / accelerated</button>
+      </div>
+      <div class="grow"></div>
+      <button class="cta" id="yearCta" disabled onclick="afterYear()">Continue</button>
+    </section>
+
+    <!-- 5: SPECIALTY (tap select) -->
+    <section class="screen" data-screen="specialty">
+      <div class="eyebrow"><span class="dot"></span>Quick setup · 2 of 2</div>
+      <h1 id="specTitle">Which placement is coming up<span class="stop">?</span></h1>
+      <p class="lede" id="specLede">Pick the closest — we'll prep you for it.</p>
+      <div class="chips" id="specChips">
+        <button class="chip" onclick="pickChip(this,'spec','Med-surg')">Med-surg</button>
+        <button class="chip" onclick="pickChip(this,'spec','Aged care')">Aged care</button>
+        <button class="chip" onclick="pickChip(this,'spec','Mental health')">Mental health</button>
+        <button class="chip" onclick="pickChip(this,'spec','Emergency')">Emergency</button>
+        <button class="chip" onclick="pickChip(this,'spec','Paediatrics')">Paediatrics</button>
+        <button class="chip" onclick="pickChip(this,'spec','Community')">Community</button>
+        <button class="chip" onclick="pickChip(this,'spec','Not sure yet')">Not sure yet</button>
+      </div>
+      <div class="grow"></div>
+      <button class="cta" id="specCta" disabled onclick="afterSpec()">Continue</button>
+    </section>
+
+    <!-- 6A: ACTIVATION — log shift (placement path) -->
+    <section class="screen" data-screen="log">
+      <div class="eyebrow"><span class="dot"></span>Your first reflection — already started</div>
+      <h1>Just finish the thought<span class="stop">.</span></h1>
+      <p class="lede">We've set up the ANSAT structure. Fill the one box and your first log is saved.</p>
+      <div class="scaffold">
+        <div class="sc-head"><span class="tag">ANSAT</span><b>Today's shift · Provides care</b></div>
+        <div class="sc-active">
+          <label>One thing you did today that you're proud of</label>
+          <textarea id="logText" rows="4" placeholder="Took a full set of obs on a deteriorating patient and escalated early…" oninput="checkLog()"></textarea>
+        </div>
+      </div>
+      <button class="cta" id="logCta" disabled onclick="go('success')">Save my first reflection</button>
+    </section>
+
+    <!-- 6B: ACTIVATION — prep guide (upcoming/exploring path) -->
+    <section class="screen" data-screen="prep">
+      <div class="eyebrow"><span class="dot"></span>Saved to your placement</div>
+      <h1 id="prepHead">Your day-one prep is ready<span class="stop">.</span></h1>
+      <p class="lede">Built by an RN. Here when you start — and your logging is already set up.</p>
+      <div class="prep">
+        <div class="ph"><div class="k" id="prepKicker">Med-surg placement</div><h3 id="prepTitle">Walking in on day one</h3></div>
+        <ul>
+          <li><span class="b"></span>What a typical shift handover sounds like</li>
+          <li><span class="b"></span>The skills you'll be assessed on (ANSAT)</li>
+          <li><span class="b"></span>What to bring & how to introduce yourself</li>
+          <li><span class="b"></span>3 questions that make you look switched on</li>
+        </ul>
+      </div>
+      <div class="grow"></div>
+      <button class="cta" onclick="go('success')">Save guide & remind me</button>
+      <button class="ghost" onclick="go('success')">Browse more guides</button>
+    </section>
+
+    <!-- 7: SUCCESS -->
+    <section class="screen" data-screen="success">
+      <div class="celebrate">
+        <div class="seal">✓</div>
+        <h1 id="successH">You're set up<span class="stop">.</span></h1>
+        <p class="lede" id="successL">That's your first reflection saved — and the start of a portfolio that grows every shift.</p>
+        <div class="future"><span class="mk">🌱</span><span>Everything you log now quietly builds your evidence portfolio — the thing your final-year self uses for grad applications.</span></div>
+      </div>
+    </section>
+
+  </div>
+  <div class="caption" id="cap"></div>
+</div>
+
+<script>
+  const order = {welcome:0, email:18, context:40, year:55, specialty:70, log:88, prep:88, success:100};
+  const state = {context:null, year:null, spec:null};
+  let current = 'welcome';
+
+  function screenEl(name){return document.querySelector(`[data-screen="${name}"]`)}
+
+  function go(name){
+    if(name==='success') tailorSuccess();
+    const cur = screenEl(current);
+    cur.classList.remove('active'); cur.classList.add('left');
+    const next = screenEl(name);
+    next.classList.remove('left');
+    // force reflow then activate
+    void next.offsetWidth;
+    next.classList.add('active');
+    current = name;
+    document.getElementById('pf').style.width = (order[name]||0) + '%';
+    setCaption(name);
+    next.scrollTop = 0;
+  }
+
+  function tailorSuccess(){
+    if(state.context==='placement'){
+      document.getElementById('successH').innerHTML='You\'re logging<span class="stop">.</span>';
+      document.getElementById('successL').textContent='That\'s your first reflection saved — and the start of a portfolio that grows every shift.';
+    }else{
+      document.getElementById('successH').innerHTML='You\'re all set for day one<span class="stop">.</span>';
+      document.getElementById('successL').textContent='Your prep is saved and we\'ll nudge you when placement starts — your logging is ready to go.';
+    }
+  }
+
+  function setCaption(name){
+    const caps = {
+      welcome:'Screen 1 · Value + RN credibility. No gate, one CTA.',
+      email:'Screen 2 · The load-bearing input. The one text field in the flow.',
+      context:'Screen 3 · The branch. Routes activation to the right path.',
+      year:'Tap-select · no typing. Maps reflections to ANSAT standards.',
+      specialty:'Tap-select · drives which prep guide or scaffold loads.',
+      log:'Activation A · finish one box = first log done.',
+      prep:'Activation B · real value with no shift to log yet.',
+      success:'Done · future-value seed shown once, gently.'
+    };
+    document.getElementById('cap').textContent = caps[name]||'';
+  }
+
+  function checkEmail(){
+    const v = document.getElementById('em').value;
+    document.getElementById('emCta').disabled = !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+  }
+
+  function pickContext(c){
+    state.context = c;
+    go('year');
+  }
+
+  function pickChip(el, group, val){
+    const parent = el.parentElement;
+    parent.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+    el.classList.add('sel');
+    state[group]=val;
+    if(group==='year') document.getElementById('yearCta').disabled=false;
+    if(group==='spec') document.getElementById('specCta').disabled=false;
+  }
+
+  function afterYear(){
+    // everyone picks specialty; label adapts to context
+    if(state.context==='placement'){
+      document.getElementById('specTitle').innerHTML='Which ward are you on<span class="stop">?</span>';
+      document.getElementById('specLede').textContent='So your shift maps to the right standards.';
+    }else{
+      document.getElementById('specTitle').innerHTML='Which placement is coming up<span class="stop">?</span>';
+      document.getElementById('specLede').textContent="Pick the closest — we'll prep you for it.";
+    }
+    go('specialty');
+  }
+
+  function afterSpec(){
+    if(state.context==='placement'){
+      go('log');
+    }else{
+      // prep path
+      const s = state.spec && state.spec!=='Not sure yet' ? state.spec : 'Your first';
+      document.getElementById('prepKicker').textContent = (state.spec||'Your') + ' placement';
+      document.getElementById('prepTitle').textContent = 'Walking in on day one';
+      go('prep');
+    }
+  }
+
+  function checkLog(){
+    document.getElementById('logCta').disabled = document.getElementById('logText').value.trim().length < 3;
+  }
+
+  function restart(){
+    state.context=state.year=state.spec=null;
+    document.getElementById('em').value='';
+    document.getElementById('emCta').disabled=true;
+    document.getElementById('logText').value='';
+    document.getElementById('logCta').disabled=true;
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+    document.getElementById('yearCta').disabled=true;
+    document.getElementById('specCta').disabled=true;
+    // adjust success copy default
+    go('welcome');
+  }
+
+  setCaption('welcome');
+</script>
+</body>
+</html>

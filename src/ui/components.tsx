@@ -1,26 +1,27 @@
 import * as React from 'react'
 
-// Minimal design-system primitives. Accessibility is a requirement: 44px min
-// touch targets, visible focus, semantic elements (CLAUDE.md §5).
+// Prac. design-system primitives (CLAUDE.md §1 brand, §5 accessibility).
+// Warm light palette, Fraunces for display / DM Sans for UI. Touch targets ≥44px,
+// visible focus rings, semantic elements. Prop APIs are stable across the redesign.
 
 function cn(...parts: Array<string | false | undefined>): string {
   return parts.filter(Boolean).join(' ')
 }
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'quiet' | 'ghost' | 'flag' | 'danger'
 }
 
 export function Button({ variant = 'primary', className, ...props }: ButtonProps) {
   const base =
-    'inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-base font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:pointer-events-none'
+    'inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl px-5 font-sans text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-paper disabled:cursor-not-allowed disabled:opacity-50'
   const variants = {
-    primary: 'bg-sky-600 text-white hover:bg-sky-500 focus-visible:ring-sky-500',
-    secondary:
-      'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700 focus-visible:ring-slate-400',
-    ghost:
-      'bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-slate-400',
-    danger: 'bg-red-600 text-white hover:bg-red-500 focus-visible:ring-red-500',
+    primary: 'bg-teal text-teal-ink shadow-[0_6px_18px_rgba(78,205,196,.35)] hover:bg-teal-bright',
+    secondary: 'bg-sage-100 text-ink hover:bg-sage-200',
+    quiet: 'border border-line bg-surface text-ink hover:border-sage-300',
+    ghost: 'bg-transparent text-teal-deep hover:text-ink',
+    flag: 'bg-flag text-white hover:opacity-90',
+    danger: 'bg-flag/0 border border-flag/40 text-flag hover:bg-flag/5',
   }
   return <button className={cn(base, variants[variant], className)} {...props} />
 }
@@ -28,10 +29,7 @@ export function Button({ variant = 'primary', className, ...props }: ButtonProps
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        'rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900',
-        className
-      )}
+      className={cn('rounded-card border border-line bg-surface p-4 shadow-card', className)}
       {...props}
     />
   )
@@ -41,7 +39,7 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   return (
     <input
       className={cn(
-        'min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+        'min-h-[48px] w-full rounded-field border border-line bg-surface px-4 text-base text-ink shadow-card outline-none transition placeholder:text-ink-faint focus:border-teal focus:ring-2 focus:ring-teal/30',
         className
       )}
       {...props}
@@ -52,7 +50,7 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300', className)}
+      className={cn('mb-1.5 block text-sm font-semibold text-ink-soft', className)}
       {...props}
     />
   )
@@ -70,10 +68,10 @@ export function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
+      {hint && <p className="text-xs leading-relaxed text-ink-faint">{hint}</p>}
     </div>
   )
 }
@@ -88,10 +86,10 @@ export function Chip({
       type="button"
       aria-pressed={active}
       className={cn(
-        'inline-flex min-h-[36px] items-center rounded-full border px-3 py-1 text-sm transition',
+        'inline-flex min-h-[44px] items-center gap-2 rounded-2xl border px-4 text-sm font-medium transition',
         active
-          ? 'border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950 dark:text-sky-300'
-          : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+          ? 'border-teal bg-new text-teal-deep'
+          : 'border-line bg-surface text-ink-soft hover:border-sage-300',
         className
       )}
       {...props}

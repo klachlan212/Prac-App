@@ -114,7 +114,9 @@ export function exportPlacement(format: ExportFormat, data: ExportData): void {
   // PDF: render the printable document in a new window and invoke the browser's
   // print-to-PDF. Works on desktop and mobile without a heavy PDF dependency.
   const win = window.open('', '_blank')
-  if (!win) return
+  if (!win) {
+    throw new Error('Couldn’t open the print view. Allow pop-ups for this site, or use “Save as text”.')
+  }
   win.document.write(buildHtml(data))
   win.document.close()
   win.focus()

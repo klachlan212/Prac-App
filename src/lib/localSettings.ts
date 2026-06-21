@@ -18,11 +18,13 @@ export function setTheme(theme: Theme): void {
   applyTheme(theme)
 }
 
-export function applyTheme(theme: Theme): void {
+// v1 is light-only to match the Prac. brand mockups (CLAUDE.md §1). We keep the
+// signature so callers (AppShell, settings) don't change, but always render the
+// warm light theme — the dark class is never applied. The settings theme control
+// is revisited when dark mode returns.
+export function applyTheme(_theme: Theme): void {
   if (typeof document === 'undefined') return
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  const dark = theme === 'dark' || (theme === 'system' && prefersDark)
-  document.documentElement.classList.toggle('dark', dark)
+  document.documentElement.classList.remove('dark')
 }
 
 export function getReminderChannel(): ReminderChannel {

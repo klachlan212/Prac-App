@@ -11,11 +11,12 @@ let universitiesCache: University[] | null = null
 export async function getStandards(track: NurseTrack = 'RN'): Promise<AnsatStandard[]> {
   if (!standardsCache) {
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('ansat_standards')
       .select('*')
       .order('ordinal')
-    standardsCache = (data ?? []).map((s) => ({
+    if (error || !data || data.length === 0) return []
+    standardsCache = data.map((s) => ({
       id: s.id,
       track: s.track,
       ordinal: s.ordinal,
@@ -29,8 +30,9 @@ export async function getStandards(track: NurseTrack = 'RN'): Promise<AnsatStand
 export async function getUniversities(): Promise<University[]> {
   if (!universitiesCache) {
     const supabase = createClient()
-    const { data } = await supabase.from('universities').select('*').order('name')
-    universitiesCache = (data ?? []).map((u) => ({
+    const { data, error } = await supabase.from('universities').select('*').order('name')
+    if (error || !data || data.length === 0) return []
+    universitiesCache = data.map((u) => ({
       id: u.id,
       name: u.name,
       country: u.country,

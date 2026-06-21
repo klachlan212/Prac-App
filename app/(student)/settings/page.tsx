@@ -6,17 +6,14 @@ import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
 import { db } from '@/src/db/schema'
 import { getProfile, updateProfile } from '@/src/data/profile'
-import {
-  getReminderChannel,
-  setReminderChannel,
-  getTheme,
-  setTheme,
-} from '@/src/lib/localSettings'
-import type { ReminderChannel, Theme } from '@/src/data/types'
+import { getReminderChannel, setReminderChannel } from '@/src/lib/localSettings'
+import type { ReminderChannel } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card, Field, Input } from '@/src/ui/components'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const SELECT =
+  'min-h-[48px] w-full rounded-field border border-line bg-surface px-4 text-base text-ink shadow-card outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/30'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -26,7 +23,6 @@ export default function SettingsPage() {
   const [reminderTime, setReminderTime] = useState('18:00')
   const [channel, setChannel] = useState<ReminderChannel>('email')
   const [taggingOn, setTaggingOn] = useState(true)
-  const [theme, setThemeState] = useState<Theme>('system')
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
@@ -45,7 +41,6 @@ export default function SettingsPage() {
       setReminderTime(profile.reminderTime ?? '18:00')
       setTaggingOn(profile.taggingOn)
       setChannel(getReminderChannel())
-      setThemeState(getTheme())
       setReady(true)
     })()
   }, [user, router])
@@ -54,21 +49,15 @@ export default function SettingsPage() {
     if (!user) return
     await updateProfile(user.id, { reminderDay, reminderTime, taggingOn })
     setReminderChannel(channel)
-    setTheme(theme)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-  }
-
-  function onThemeChange(t: Theme) {
-    setThemeState(t)
-    setTheme(t)
   }
 
   async function deleteAccount() {
     if (!user) return
     if (!confirm('Delete your account and ALL reflections permanently? This cannot be undone.')) return
     const supabase = createClient()
-    // Owner-scoped delete; cascades to placements, reflections, and tags.
+    // Owner-scoped delete; cascades to placements, reflections, skills, and flags.
     await supabase.from('profiles').delete().eq('id', user.id)
     await db.delete()
     await supabase.auth.signOut()
@@ -78,7 +67,7 @@ export default function SettingsPage() {
   if (loading || !user || !ready) {
     return (
       <AppShell userId={user?.id ?? null}>
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-ink-faint">Loading…</p>
       </AppShell>
     )
   }
@@ -86,17 +75,19 @@ export default function SettingsPage() {
   return (
     <AppShell userId={user.id}>
       <div className="space-y-5">
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          Settings<span className="text-teal">.</span>
+        </h1>
 
         <Card className="space-y-4">
-          <h2 className="font-medium">Reminders</h2>
+          <h2 className="font-display text-lg font-semibold">Reminders</h2>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Day" htmlFor="day">
               <select
                 id="day"
                 value={reminderDay}
                 onChange={(e) => setReminderDay(Number(e.target.value))}
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base dark:border-slate-700 dark:bg-slate-900"
+                className={SELECT}
               >
                 {DAYS.map((d, i) => (
                   <option key={d} value={i}>
@@ -114,7 +105,7 @@ export default function SettingsPage() {
               id="channel"
               value={channel}
               onChange={(e) => setChannel(e.target.value as ReminderChannel)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base dark:border-slate-700 dark:bg-slate-900"
+              className={SELECT}
             >
               <option value="email">Email</option>
               <option value="push">Web push (if installed)</option>
@@ -124,37 +115,33 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="space-y-4">
-          <h2 className="font-medium">Appearance & assistance</h2>
-          <Field label="Theme" htmlFor="theme">
-            <select
-              id="theme"
-              value={theme}
-              onChange={(e) => onThemeChange(e.target.value as Theme)}
-              className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base dark:border-slate-700 dark:bg-slate-900"
-            >
-              <option value="system">Match system</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </Field>
-          <label className="flex items-center justify-between">
-            <span className="text-sm text-slate-700 dark:text-slate-300">On-device tag suggestions</span>
-            <input type="checkbox" checked={taggingOn} onChange={(e) => setTaggingOn(e.target.checked)} className="h-6 w-6" />
+          <h2 className="font-display text-lg font-semibold">Assistance</h2>
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm text-ink-soft">On-device tag suggestions</span>
+            <input
+              type="checkbox"
+              checked={taggingOn}
+              onChange={(e) => setTaggingOn(e.target.checked)}
+              className="h-6 w-6 accent-teal"
+            />
           </label>
         </Card>
 
         <div className="flex items-center gap-3">
-          <Button onClick={save}>Save settings</Button>
-          {saved && <span className="text-sm text-emerald-600">Saved</span>}
+          <Button className="w-auto px-6" onClick={save}>
+            Save settings
+          </Button>
+          {saved && <span className="text-sm font-medium text-teal-deep">Saved</span>}
         </div>
 
-        <Card className="space-y-3 border-red-200 dark:border-red-900">
-          <h2 className="font-medium text-red-700 dark:text-red-400">Account</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Deleting your account removes all your reflections permanently from this device and the server.
+        <Card className="space-y-3 border-flag-line">
+          <h2 className="font-display text-lg font-semibold text-flag">Account</h2>
+          <p className="text-sm text-ink-soft">
+            Deleting your account removes all your reflections permanently from this device and the
+            server.
           </p>
-          <Button variant="danger" onClick={deleteAccount}>
-            Delete account & all content
+          <Button variant="danger" className="w-auto px-5" onClick={deleteAccount}>
+            Delete account &amp; all content
           </Button>
         </Card>
       </div>
