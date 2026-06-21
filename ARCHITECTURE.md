@@ -298,8 +298,12 @@ remains the real guard.
 - **No `middleware.ts`** — it 500'd on Edge; do not reintroduce. Gate in client/server
   components instead.
 - Keep Node-only deps out of any Edge bundle.
-- Hosted on Vercel (project `prac-app`); production `main` is currently **untouched** —
-  all of the above lives on the feature branch awaiting a ship decision.
+- Hosted on Vercel (project `prac-app`); **shipped to production 21 Jun 2026** — the
+  feature branch was merged to `main` (merge `2fb205e`), so production now serves the
+  full app. Active development continues on `claude/confident-turing-wspzot`.
+  **Deployment Protection (Vercel Authentication) is still ON**, so the production URL
+  returns 401 to the public until it's disabled — that's the gate for open access, not a
+  deploy step.
 - The `weekly-reminder` edge function exists but is **not deployed** and nothing
   schedules it (the "reflection trigger" is an open product problem).
 
@@ -320,4 +324,5 @@ remains the real guard.
 - The reflection trigger / reminders (highest-value open product problem).
 - Magic-link login (spec wants it for the multi-year handoff; password is interim).
 - Login CAPTCHA + leaked-password protection (needs Pro plan).
-- Production promotion + the completion test (real students finishing the loop twice).
+- Turn off Deployment Protection (Vercel Authentication) for public access.
+- The completion test — real students finishing the loop twice (production is now shipped).
