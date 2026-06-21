@@ -124,6 +124,7 @@ export async function submitTip(input: SubmitTipInput): Promise<void> {
     p_confidence: input.confidence ?? null,
     p_verification_date: input.verificationDate,
     p_anonymous: input.anonymous,
+    p_token: getVoterToken(),
   })
   if (error) throw error
 }
@@ -141,6 +142,7 @@ export async function requestHospital(input: RequestHospitalInput): Promise<void
     p_name: input.name,
     p_note: input.note ?? null,
     p_anonymous: input.anonymous,
+    p_token: getVoterToken(),
   })
   if (error) throw error
 }

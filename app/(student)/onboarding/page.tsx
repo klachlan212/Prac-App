@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
-import { createClient } from '@/src/auth/client'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
 import { WARD_TO_GUIDE } from '@/src/content/guides'
@@ -95,9 +94,6 @@ export default function OnboardingPage() {
       if (context !== 'exploring') {
         await createPlacement(user.id, { ward })
       }
-
-      const token = new URLSearchParams(window.location.search).get('invite')
-      if (token) await createClient().rpc('accept_invitation', { p_token: token })
 
       setStep('success')
     } catch {
