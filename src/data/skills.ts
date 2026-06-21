@@ -16,11 +16,14 @@ function uniq<T>(xs: T[]): T[] {
 export async function getSkillLibrary(track: NurseTrack = 'RN'): Promise<SkillLibraryEntry[]> {
   if (!skillCache) {
     const supabase = createClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('skill_library')
       .select('id, name, category, track, skill_ansat_map(standard_id, item_code)')
       .order('name')
-    skillCache = (data ?? []).map((s: any) => {
+    // Never cache an empty/failed read (offline first-load), or skill search is
+    // silently dead for the whole session. Return empty now, retry next call.
+    if (error || !data || data.length === 0) return []
+    skillCache = data.map((s: any) => {
       const maps = (s.skill_ansat_map ?? []) as Array<{ standard_id: number; item_code: string | null }>
       return {
         id: s.id,
@@ -38,8 +41,9 @@ export async function getSkillLibrary(track: NurseTrack = 'RN'): Promise<SkillLi
 export async function getAnsatItems(): Promise<AnsatItem[]> {
   if (!itemCache) {
     const supabase = createClient()
-    const { data } = await supabase.from('ansat_items').select('*').order('ordinal')
-    itemCache = (data ?? []).map((i: any) => ({
+    const { data, error } = await supabase.from('ansat_items').select('*').order('ordinal')
+    if (error || !data || data.length === 0) return []
+    itemCache = data.map((i: any) => ({
       code: i.code,
       standardId: i.standard_id,
       ordinal: i.ordinal,

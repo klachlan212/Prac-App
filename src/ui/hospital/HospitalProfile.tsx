@@ -198,7 +198,9 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
         </span>
         <span className="text-[13px] leading-snug">
           <b className="font-semibold">Curated by {hospital.curatedBy}</b>
-          {!loading && tips.length > 0 && <> · {tips.length} tips verified</>}
+          {tips.length > 0 && (
+            <> · {tips.length} tip{tips.length === 1 ? '' : 's'} published</>
+          )}
           <br />
           <span className="text-ink-faint">
             Every tip is timestamped and human-reviewed before it’s published.

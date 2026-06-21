@@ -164,6 +164,15 @@ export async function pull(userId: string): Promise<void> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return
   const supabase = createClient()
 
+  // Profile first — without it a returning user on a new device is bounced back
+  // through onboarding (which duplicates their placement). LWW by synced state.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+  if (profile) await mergeProfile(profile)
+
   const { data: placements } = await supabase
     .from('placements')
     .select('*')
@@ -181,6 +190,25 @@ export async function pull(userId: string): Promise<void> {
   for (const r of reflections ?? []) {
     await mergeReflection(r)
   }
+}
+
+async function mergeProfile(p: any): Promise<void> {
+  // Don't clobber unsynced local edits to the profile.
+  const local = await db.profile.get(p.id)
+  if (local && local.synced === 0) return
+  await db.profile.put({
+    id: p.id,
+    fullName: p.full_name,
+    universityId: p.university_id ?? undefined,
+    program: p.program ?? undefined,
+    cohort: p.cohort ?? undefined,
+    yearLevel: p.year_level ?? undefined,
+    nurseTrack: p.nurse_track,
+    reminderDay: p.reminder_day,
+    reminderTime: p.reminder_time ?? undefined,
+    taggingOn: p.tagging_on,
+    synced: 1,
+  })
 }
 
 async function mergePlacement(p: any): Promise<void> {

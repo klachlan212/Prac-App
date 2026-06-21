@@ -17,9 +17,11 @@ export interface SubmissionFormProps {
   defaultCategory?: TipCategory | null
 }
 
-// Universal submission form (one form, all categories). Validates on submit;
-// no backend — a real submission would queue for Lachlan to review before
-// publishing, so success just confirms that.
+// Universal submission form (one form, all categories). Validates on submit, then
+// calls submit_hospital_tip (SECURITY DEFINER RPC) which queues the tip to the
+// moderation table — nothing is public until a moderator approves it.
+// NOTE: the "request a new hospital" branch has no capture mechanism yet, so its
+// confirmation copy must not claim the request was recorded.
 export function SubmissionForm({
   open,
   onClose,
@@ -135,7 +137,7 @@ export function SubmissionForm({
             <h2 className="mt-4 font-display text-xl font-semibold tracking-tight">Thanks.</h2>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
               {hospitalId === REQUEST_NEW
-                ? `We’ve noted your request for ${requestName.trim()}. Lachlan reviews every submission before it goes live.`
+                ? `Thanks for flagging ${requestName.trim()}. New-hospital requests aren’t automated yet — the quickest way to get it added is to let Lachlan know directly.`
                 : 'Lachlan reviews every tip before it’s published, so it doesn’t appear straight away. That review is what keeps this directory trustworthy.'}
             </p>
             <div className="mt-5">

@@ -26,20 +26,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
     let active = true
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!active) return
-      const signedIn = !!session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!active) return
+        const signedIn = !!session
 
-      if (!signedIn && !isPublicPath(pathname)) {
-        router.replace('/sign-in')
-        return
-      }
-      if (signedIn && pathname === '/sign-in') {
-        router.replace('/reflections')
-        return
-      }
-      setReady(true)
-    })
+        if (!signedIn && !isPublicPath(pathname)) {
+          router.replace('/sign-in')
+          return
+        }
+        if (signedIn && pathname === '/sign-in') {
+          router.replace('/reflections')
+          return
+        }
+        setReady(true)
+      })
+      .catch(() => {
+        // Never hang on a blank screen if the session check throws. Fail open to
+        // the client render — RLS is the real boundary and protected pages render
+        // only from the per-device local store, so no data leaks either way.
+        if (!active) return
+        setReady(true)
+      })
 
     return () => {
       active = false

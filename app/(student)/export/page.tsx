@@ -27,6 +27,37 @@ function reflectionText(r: { whatHappened?: string; soWhat?: string; nowWhat?: s
   return [r.whatHappened, r.soWhat, r.nowWhat, r.body].filter(Boolean).join('\n')
 }
 
+// One selector for "what ships", used by both the identifier gate and the export
+// builder so the gate scans exactly the text that ends up in the file.
+function isExportable(r: {
+  deletedAt?: string
+  whatHappened?: string
+  soWhat?: string
+  nowWhat?: string
+  body?: string
+  skills?: unknown[]
+}): boolean {
+  return (
+    !r.deletedAt &&
+    Boolean(r.whatHappened || r.soWhat || r.nowWhat || r.body || (r.skills?.length ?? 0) > 0)
+  )
+}
+
+// Compose the exported body from the three structured prompts (the record was
+// dropping "So what?" and "Now what?" entirely); fall back to legacy `body`.
+function exportBody(r: { whatHappened?: string; soWhat?: string; nowWhat?: string; body?: string }): string {
+  if (r.whatHappened || r.soWhat || r.nowWhat) {
+    return [
+      r.whatHappened && `What happened?\n${r.whatHappened}`,
+      r.soWhat && `So what?\n${r.soWhat}`,
+      r.nowWhat && `Now what?\n${r.nowWhat}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+  }
+  return r.body || ''
+}
+
 export default function ExportPage() {
   const router = useRouter()
   const { user, loading } = useUser()
@@ -37,8 +68,8 @@ export default function ExportPage() {
 
   const [step, setStep] = useState<Step>('scope')
   const [issues, setIssues] = useState<Issue[]>([])
-  const [resolvedCount, setResolvedCount] = useState(0)
   const [building, setBuilding] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -56,7 +87,7 @@ export default function ExportPage() {
       setPlacement(active ?? null)
       if (active) {
         const all = await db.reflections.where('placementId').equals(active.id).toArray()
-        setCount(all.filter((r) => !r.deletedAt).length)
+        setCount(all.filter(isExportable).length)
       }
       setReady(true)
     })()
@@ -65,7 +96,7 @@ export default function ExportPage() {
   async function buildIssues(): Promise<Issue[]> {
     if (!placement) return []
     const all = (await db.reflections.where('placementId').equals(placement.id).toArray()).filter(
-      (r) => !r.deletedAt
+      isExportable
     )
     const out: Issue[] = []
     for (const r of all) {
@@ -85,7 +116,6 @@ export default function ExportPage() {
   async function checkIdentifiers() {
     const found = await buildIssues()
     setIssues(found)
-    setResolvedCount(0)
     setStep('gate')
   }
 
@@ -98,7 +128,6 @@ export default function ExportPage() {
     else flags.push({ id: newId(), label: it.label, kind: 'other', status: 'dismissed' })
     await saveReflection({ id: r.id, placementId: r.placementId, userId: r.userId, identifierFlags: flags, status: r.status })
     setIssues(await buildIssues())
-    setResolvedCount((n) => n + 1)
   }
 
   async function buildData(): Promise<ExportData | null> {
@@ -111,7 +140,7 @@ export default function ExportPage() {
 
     const all = await db.reflections.where('placementId').equals(placement.id).toArray()
     const live = all
-      .filter((r) => !r.deletedAt && (r.body || (r.skills?.length ?? 0) > 0))
+      .filter(isExportable)
       .sort((a, b) => (a.reflectedOn < b.reflectedOn ? -1 : a.reflectedOn > b.reflectedOn ? 1 : 0))
     const ordered = order === 'forward' ? live : [...live].reverse()
 
@@ -125,7 +154,7 @@ export default function ExportPage() {
       endDate: placement.endDate,
       reflections: ordered.map((r) => ({
         reflectedOn: r.reflectedOn,
-        body: r.body || r.whatHappened || '',
+        body: exportBody(r),
         standards: r.standardIds.map((id) => standardLabel.get(id) ?? `Standard ${id}`),
         tags: (r.skills ?? []).map((s) => s.name),
       })),
@@ -134,9 +163,12 @@ export default function ExportPage() {
 
   async function doExport(format: 'pdf' | 'text') {
     setBuilding(true)
+    setExportError(null)
     try {
       const data = await buildData()
       if (data) exportPlacement(format, data)
+    } catch (err) {
+      setExportError((err as Error).message)
     } finally {
       setBuilding(false)
     }
@@ -220,7 +252,7 @@ export default function ExportPage() {
               <h1 className="mt-1.5 font-display text-xl font-semibold leading-tight text-flag-ink">
                 {issues.length > 0
                   ? `${issues.length} detail${issues.length === 1 ? '' : 's'} could identify someone.`
-                  : 'No common identifiers spotted.'}
+                  : 'Nothing common flagged — but this check is partial.'}
               </h1>
             </div>
 
@@ -258,7 +290,8 @@ export default function ExportPage() {
               </div>
             ) : (
               <p className="text-sm leading-relaxed text-ink-soft">
-                Each flagged detail has been handled. You can generate your record now.
+                Nothing common left to flag. Read it through once more before you share — the check
+                misses unstructured identifiers (rare presentations, indirect references).
               </p>
             )}
 
@@ -294,10 +327,7 @@ export default function ExportPage() {
               Record ready<span className="text-teal">.</span>
             </h1>
             <p className="mt-2 text-sm text-ink-soft">
-              {count} reflection{count === 1 ? '' : 's'}
-              {resolvedCount > 0
-                ? ` · ${resolvedCount} identifier${resolvedCount === 1 ? '' : 's'} handled before export.`
-                : '.'}
+              {count} reflection{count === 1 ? '' : 's'}.
             </p>
 
             <div className="mt-6 flex w-full items-start gap-2 rounded-card border border-flag-line bg-flag-bg p-3 text-left text-xs leading-relaxed text-flag-ink">
@@ -309,6 +339,12 @@ export default function ExportPage() {
                 you send this to anyone.
               </span>
             </div>
+
+            {exportError && (
+              <p className="mt-4 w-full rounded-card border border-flag-line bg-flag-bg p-3 text-left text-xs leading-relaxed text-flag-ink">
+                {exportError}
+              </p>
+            )}
 
             <div className="mt-6 w-full space-y-2">
               <Button disabled={building} onClick={() => doExport('pdf')}>

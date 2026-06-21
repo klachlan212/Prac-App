@@ -205,6 +205,9 @@ export interface HospitalInput {
 
 /** Add or edit a hospital (moderator-only via RLS). */
 export async function upsertHospital(input: HospitalInput): Promise<void> {
+  // The DB has a NOT NULL + check constraint on state; reject early with a clear
+  // message rather than surfacing a raw constraint violation.
+  if (!input.state) throw new Error('Pick a state.')
   const supabase = createClient()
   const { error } = await supabase.from('hospitals').upsert({
     id: input.id,

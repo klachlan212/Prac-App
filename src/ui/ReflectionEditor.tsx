@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/src/db/schema'
 import { useUser } from '@/src/auth/useUser'
 import { getProfile } from '@/src/data/profile'
-import { getActivePlacement } from '@/src/data/placements'
+import { getOrCreateActivePlacement } from '@/src/data/placements'
 import { getReflection, saveReflection } from '@/src/data/reflections'
 import { getStandards } from '@/src/data/standards'
 import { getSkillLibrary, getAnsatItems } from '@/src/data/skills'
@@ -45,6 +45,8 @@ export function ReflectionEditor({
   const [items, setItems] = useState<AnsatItem[]>([])
   const [library, setLibrary] = useState<SkillLibraryEntry[]>([])
   const [priorSkillIds, setPriorSkillIds] = useState<Set<string>>(new Set())
+  const [dismissedLabels, setDismissedLabels] = useState<Set<string>>(new Set())
+  const [taggingOn, setTaggingOn] = useState(true)
   const [ready, setReady] = useState(false)
 
   const [step, setStep] = useState<Step>(mode === 'skill' ? 'skills' : 'reflect')
@@ -77,14 +79,19 @@ export function ReflectionEditor({
       setStandards(stds)
       setItems(its)
       setLibrary(lib)
-      const active = await getActivePlacement(user.id)
-      setPlacementId(active?.id ?? null)
+      setTaggingOn(profile.taggingOn)
+      // Always resolve to a real placement so a reflection is never dropped.
+      const active = await getOrCreateActivePlacement(user.id)
+      setPlacementId(active.id)
 
-      // New/Renewed is auto-set from the student's own history (spec §3).
+      // New/Renewed is auto-set from the student's own history (spec §3) — only
+      // SAVED reflections count, never in-progress drafts (autosave writes a draft
+      // on every keystroke, which would otherwise mislabel a skill as "Renewed").
       const prior = new Set<string>()
       const all = await db.reflections.where('userId').equals(user.id).toArray()
       for (const r of all) {
         if (r.id === idRef.current) continue
+        if (r.status !== 'saved' || r.deletedAt) continue
         for (const s of r.skills ?? []) if (s.skillId) prior.add(s.skillId)
       }
       setPriorSkillIds(prior)
@@ -98,6 +105,15 @@ export function ReflectionEditor({
           setReflectedOn(existing.reflectedOn)
           setSkills(existing.skills ?? [])
           setSelected(new Set(existing.standardIds))
+          // Preserve identifier dismissals across edits — otherwise the next
+          // autosave wipes them and the export gate re-flags the same details.
+          setDismissedLabels(
+            new Set(
+              (existing.identifierFlags ?? [])
+                .filter((f) => f.status === 'dismissed')
+                .map((f) => f.label.toLowerCase())
+            )
+          )
           mappingInit.current = true
         }
       }
@@ -110,6 +126,16 @@ export function ReflectionEditor({
     [whatHappened, soWhat, nowWhat]
   )
   const flags = useMemo(() => scanIdentifiers(text), [text])
+  // Re-apply any prior dismissals so they survive autosave (the gate's decisions
+  // are sticky); the writing-time nudge only shows still-open flags.
+  const flagsToSave = useMemo(
+    () =>
+      flags.map((f) =>
+        dismissedLabels.has(f.label.toLowerCase()) ? { ...f, status: 'dismissed' as const } : f
+      ),
+    [flags, dismissedLabels]
+  )
+  const openFlags = useMemo(() => flagsToSave.filter((f) => f.status === 'open'), [flagsToSave])
   const suggested = useMemo(() => inferStandards(skills, text), [skills, text])
 
   const stdById = useMemo(() => new Map(standards.map((s) => [s.id, s])), [standards])
@@ -138,12 +164,12 @@ export function ReflectionEditor({
         reflectedOn,
         standardIds: [...selected],
         skills,
-        identifierFlags: flags,
+        identifierFlags: flagsToSave,
         status: 'draft',
       }).then(() => setSavedAt(new Date().toLocaleTimeString()))
     }, 700)
     return () => clearTimeout(h)
-  }, [ready, user, placementId, step, whatHappened, soWhat, nowWhat, reflectedOn, selected, skills, flags])
+  }, [ready, user, placementId, step, whatHappened, soWhat, nowWhat, reflectedOn, selected, skills, flagsToSave])
 
   const totals = useLiveQuery(
     async () => {
@@ -220,28 +246,33 @@ export function ReflectionEditor({
 
   function goReview() {
     if (!mappingInit.current) {
-      setSelected(new Set(suggested))
+      // Pre-select the inferred standards unless the student turned tag
+      // suggestions off in settings (then they start from a blank mapping).
+      setSelected(taggingOn ? new Set(suggested) : new Set())
       mappingInit.current = true
     }
     setStep('review')
   }
 
   async function finish() {
-    if (user && placementId) {
-      await saveReflection({
-        id: idRef.current,
-        placementId,
-        userId: user.id,
-        whatHappened,
-        soWhat,
-        nowWhat,
-        reflectedOn,
-        standardIds: [...selected],
-        skills,
-        identifierFlags: flags,
-        status: 'saved',
-      })
-    }
+    if (!user) return
+    // Guarantee a placement before we ever show "Saved" — never affirm a save
+    // that didn't happen.
+    const pid = placementId ?? (await getOrCreateActivePlacement(user.id)).id
+    if (!placementId) setPlacementId(pid)
+    await saveReflection({
+      id: idRef.current,
+      placementId: pid,
+      userId: user.id,
+      whatHappened,
+      soWhat,
+      nowWhat,
+      reflectedOn,
+      standardIds: [...selected],
+      skills,
+      identifierFlags: flagsToSave,
+      status: 'saved',
+    })
     setStep('saved')
   }
 
@@ -277,7 +308,7 @@ export function ReflectionEditor({
             </div>
             <span className="flex items-center gap-1.5 text-xs text-teal-deep">
               <span className="h-1.5 w-1.5 rounded-full bg-teal" aria-hidden />
-              {savedAt ? 'Saved' : 'Autosaving…'}
+              {savedAt ? `Saved ${savedAt}` : 'Draft autosaves'}
             </span>
           </div>
         )}
@@ -310,14 +341,14 @@ export function ReflectionEditor({
               onChange={setNowWhat}
             />
 
-            {flags.length > 0 && (
+            {openFlags.length > 0 && (
               <div className="flex items-start gap-2 rounded-card border border-flag-line bg-flag-bg p-3 text-xs leading-relaxed text-flag-ink">
                 <span className="font-semibold text-flag" aria-hidden>
                   ⚑
                 </span>
                 <span>
                   Some details might identify someone (e.g.{' '}
-                  <b>{flags.slice(0, 3).map((f) => f.label).join(', ')}</b>). Consider
+                  <b>{openFlags.slice(0, 3).map((f) => f.label).join(', ')}</b>). Consider
                   &ldquo;the patient&rdquo; or an initial — we&rsquo;ll ask again before you export.
                 </span>
               </div>
