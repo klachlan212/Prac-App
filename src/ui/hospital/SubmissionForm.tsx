@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Button, Field, Input, Label } from '@/src/ui/components'
 import { CATEGORIES, type Hospital, type TipCategory, type Confidence } from '@/src/content/hospitals'
-import { submitTip } from '@/src/data/hospitals'
+import { submitTip, requestHospital } from '@/src/data/hospitals'
 import { todayISO } from '@/src/data/ids'
 
 const MAX = 300
@@ -19,9 +19,9 @@ export interface SubmissionFormProps {
 
 // Universal submission form (one form, all categories). Validates on submit, then
 // calls submit_hospital_tip (SECURITY DEFINER RPC) which queues the tip to the
-// moderation table — nothing is public until a moderator approves it.
-// NOTE: the "request a new hospital" branch has no capture mechanism yet, so its
-// confirmation copy must not claim the request was recorded.
+// moderation table — nothing is public until a moderator approves it. The
+// "request a new hospital" branch instead calls request_hospital, which queues
+// the request to its own moderator-only table.
 export function SubmissionForm({
   open,
   onClose,
@@ -81,21 +81,30 @@ export function SubmissionForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (submitting) return
-    if (hospitalId === REQUEST_NEW && !requestName.trim()) {
-      return setError('Tell us which hospital to add.')
+
+    // "Request a new hospital" → its own moderation queue (request_hospital RPC).
+    // Only the name is required; the tip fields don't apply.
+    if (hospitalId === REQUEST_NEW) {
+      if (!requestName.trim()) return setError('Tell us which hospital to add.')
+      setError(null)
+      setSubmitting(true)
+      try {
+        await requestHospital({ name: requestName.trim(), note: text.trim() || null, anonymous })
+        setDone(true)
+      } catch {
+        setError('Couldn’t send just now — check your connection and try again.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
     }
-    if (hospitalId !== REQUEST_NEW && !hospitalId) return setError('Choose a hospital.')
+
+    if (!hospitalId) return setError('Choose a hospital.')
     if (!category) return setError('Choose a category.')
     if (!text.trim()) return setError('Add your tip.')
     if (text.length > MAX) return setError(`Keep it under ${MAX} characters.`)
     if (!verifiedOn) return setError('Add the date you last confirmed this.')
     setError(null)
-
-    // "Request a new hospital" has no tip to queue — just acknowledge it.
-    if (hospitalId === REQUEST_NEW) {
-      setDone(true)
-      return
-    }
 
     setSubmitting(true)
     try {
@@ -137,7 +146,7 @@ export function SubmissionForm({
             <h2 className="mt-4 font-display text-xl font-semibold tracking-tight">Thanks.</h2>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
               {hospitalId === REQUEST_NEW
-                ? `Thanks for flagging ${requestName.trim()}. New-hospital requests aren’t automated yet — the quickest way to get it added is to let Lachlan know directly.`
+                ? `We’ve noted your request for ${requestName.trim()}. Lachlan reviews requests and adds the most-asked-for hospitals first.`
                 : 'Lachlan reviews every tip before it’s published, so it doesn’t appear straight away. That review is what keeps this directory trustworthy.'}
             </p>
             <div className="mt-5">
@@ -177,15 +186,33 @@ export function SubmissionForm({
             </Field>
 
             {hospitalId === REQUEST_NEW && (
-              <Field label="Which hospital?" hint="We’ll add the most-requested ones first.">
-                <Input
-                  value={requestName}
-                  onChange={(e) => setRequestName(e.target.value)}
-                  placeholder="e.g. Northern Hospital, Epping"
-                />
-              </Field>
+              <>
+                <Field label="Which hospital?" hint="We’ll add the most-requested ones first.">
+                  <Input
+                    value={requestName}
+                    onChange={(e) => setRequestName(e.target.value)}
+                    placeholder="e.g. Northern Hospital, Epping"
+                  />
+                </Field>
+                <div className="space-y-1.5">
+                  <Label htmlFor="request-note">
+                    Anything else? <span className="font-normal text-ink-faint">(optional)</span>
+                  </Label>
+                  <textarea
+                    id="request-note"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={3}
+                    maxLength={MAX}
+                    placeholder="Anything that helps us prioritise — e.g. a major student placement site."
+                    className="w-full rounded-card border border-line bg-surface p-3.5 text-sm leading-relaxed text-ink shadow-card outline-none transition placeholder:text-ink-faint focus:border-teal focus:ring-2 focus:ring-teal/30"
+                  />
+                </div>
+              </>
             )}
 
+            {hospitalId !== REQUEST_NEW && (
+              <>
             <Field label="Category">
               <select
                 value={category}
@@ -274,6 +301,8 @@ export function SubmissionForm({
                 onChange={(e) => setVerifiedOn(e.target.value)}
               />
             </Field>
+              </>
+            )}
 
             <label className="flex min-h-[44px] cursor-pointer items-center gap-3 text-sm text-ink-soft">
               <input
@@ -292,7 +321,13 @@ export function SubmissionForm({
             )}
 
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Sharing…' : 'Share this tip'}
+              {hospitalId === REQUEST_NEW
+                ? submitting
+                  ? 'Sending…'
+                  : 'Send request'
+                : submitting
+                  ? 'Sharing…'
+                  : 'Share this tip'}
             </Button>
           </form>
         )}

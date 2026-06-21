@@ -188,7 +188,12 @@ export default function ReflectionsPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            <h2 className="pt-1 font-display text-lg font-semibold">Recent reflections</h2>
+            <div className="flex items-baseline justify-between pt-1">
+              <h2 className="font-display text-lg font-semibold">Recent reflections</h2>
+              <Link href="/history" className="text-sm font-medium text-teal-deep hover:text-ink">
+                See all →
+              </Link>
+            </div>
             <ul className="space-y-3">
               {reflections?.map((r) => {
               const toReview = (r.identifierFlags ?? []).filter((f) => f.status === 'open').length

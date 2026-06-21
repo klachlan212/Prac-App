@@ -59,6 +59,23 @@ export default function ProfilePage() {
           </p>
         </div>
 
+        <Link href="/history" className="block">
+          <Card className="flex items-center gap-3 transition hover:border-sage-300">
+            <span className="text-xl" aria-hidden>
+              📚
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Your record</span>
+              <span className="block text-xs text-ink-soft">
+                Every reflection, filterable by standard, skill type and recency.
+              </span>
+            </span>
+            <span className="text-sage-300" aria-hidden>
+              ›
+            </span>
+          </Card>
+        </Link>
+
         <Link href="/export" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
             <span className="text-xl" aria-hidden>

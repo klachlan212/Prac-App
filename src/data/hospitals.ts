@@ -128,6 +128,23 @@ export async function submitTip(input: SubmitTipInput): Promise<void> {
   if (error) throw error
 }
 
+export interface RequestHospitalInput {
+  name: string
+  note?: string | null
+  anonymous: boolean
+}
+
+/** Request a new hospital → its own moderation queue (request_hospital RPC). */
+export async function requestHospital(input: RequestHospitalInput): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.rpc('request_hospital', {
+    p_name: input.name,
+    p_note: input.note ?? null,
+    p_anonymous: input.anonymous,
+  })
+  if (error) throw error
+}
+
 /** Cast / toggle a vote; returns the authoritative new counts. */
 export async function castVote(
   tipId: string,

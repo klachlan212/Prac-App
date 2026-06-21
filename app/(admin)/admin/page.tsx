@@ -35,6 +35,14 @@ interface PendingTip {
   hospital_name: string
 }
 
+interface PendingRequest {
+  id: string
+  name: string
+  note: string | null
+  submitted_by: string
+  created_at: string
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const { user, loading } = useUser()
@@ -47,6 +55,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [isModerator, setIsModerator] = useState(false)
   const [pending, setPending] = useState<PendingTip[]>([])
+  const [requests, setRequests] = useState<PendingRequest[]>([])
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -115,6 +124,17 @@ export default function AdminPage() {
     )
   }, [])
 
+  // Hospital-request queue (global moderators only).
+  const loadRequests = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('hospital_requests')
+      .select('id, name, note, submitted_by, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+    setRequests((data as PendingRequest[]) ?? [])
+  }, [])
+
   useEffect(() => {
     if (!user) return
     const supabase = createClient()
@@ -126,9 +146,23 @@ export default function AdminPage() {
         .maybeSingle()
       const mod = Boolean(prof?.is_moderator)
       setIsModerator(mod)
-      if (mod) await loadPending()
+      if (mod) {
+        await loadPending()
+        await loadRequests()
+      }
     })()
-  }, [user, loadPending])
+  }, [user, loadPending, loadRequests])
+
+  async function triageRequest(id: string, status: 'reviewed' | 'dismissed') {
+    const supabase = createClient()
+    const { error } = await supabase.from('hospital_requests').update({ status }).eq('id', id)
+    if (error) {
+      setNotice(error.message)
+      return
+    }
+    setRequests((p) => p.filter((r) => r.id !== id))
+    setNotice(status === 'reviewed' ? 'Request marked reviewed.' : 'Request dismissed.')
+  }
 
   async function moderate(id: string, publish: boolean) {
     const supabase = createClient()
@@ -235,6 +269,38 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+
+          <div>
+            <h2 className="mb-2 font-medium">Hospital requests</h2>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+              Hospitals students have asked for. Add it via the directory below, then mark reviewed —
+              or dismiss.
+            </p>
+            {requests.length === 0 ? (
+              <Card>
+                <p className="text-sm text-slate-500">No requests waiting.</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {requests.map((r) => (
+                  <Card key={r.id} className="space-y-2">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {r.submitted_by} · {new Date(r.created_at).toLocaleDateString()}
+                    </div>
+                    <p className="text-sm font-medium">{r.name}</p>
+                    {r.note && <p className="text-sm text-slate-600 dark:text-slate-300">{r.note}</p>}
+                    <div className="flex gap-2">
+                      <Button onClick={() => triageRequest(r.id, 'reviewed')}>Mark reviewed</Button>
+                      <Button variant="danger" onClick={() => triageRequest(r.id, 'dismissed')}>
+                        Dismiss
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
           <HospitalAdmin />
           </>
         )}

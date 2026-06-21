@@ -39,7 +39,10 @@ export function ReflectionEditor({
   const { user, loading } = useUser()
 
   const idRef = useRef<string>(reflectionId ?? newId())
-  const mappingInit = useRef(false)
+  // Standards we've already auto-applied from inference, so going back to Skills,
+  // adding one, and returning to Review merges the NEW suggestion without
+  // re-adding standards the student deliberately removed.
+  const appliedSuggestions = useRef<Set<number>>(new Set())
   const [placementId, setPlacementId] = useState<string | null>(null)
   const [standards, setStandards] = useState<AnsatStandard[]>([])
   const [items, setItems] = useState<AnsatItem[]>([])
@@ -114,7 +117,7 @@ export function ReflectionEditor({
                 .map((f) => f.label.toLowerCase())
             )
           )
-          mappingInit.current = true
+          appliedSuggestions.current = new Set(existing.standardIds)
         }
       }
       setReady(true)
@@ -137,6 +140,13 @@ export function ReflectionEditor({
   )
   const openFlags = useMemo(() => flagsToSave.filter((f) => f.status === 'open'), [flagsToSave])
   const suggested = useMemo(() => inferStandards(skills, text), [skills, text])
+  // Item-level codes (e.g. "4.2") from the logged skills, persisted so the
+  // 23-item granularity survives a sync / device switch (matched to each standard
+  // at push time). Auditable: answers "why Standard 4?".
+  const reflectionItemCodes = useMemo(
+    () => [...new Set(skills.flatMap((s) => s.itemCodes))],
+    [skills]
+  )
 
   const stdById = useMemo(() => new Map(standards.map((s) => [s.id, s])), [standards])
   const itemByCode = useMemo(() => new Map(items.map((i) => [i.code, i])), [items])
@@ -163,13 +173,14 @@ export function ReflectionEditor({
         nowWhat,
         reflectedOn,
         standardIds: [...selected],
+        itemCodes: reflectionItemCodes,
         skills,
         identifierFlags: flagsToSave,
         status: 'draft',
       }).then(() => setSavedAt(new Date().toLocaleTimeString()))
     }, 700)
     return () => clearTimeout(h)
-  }, [ready, user, placementId, step, whatHappened, soWhat, nowWhat, reflectedOn, selected, skills, flagsToSave])
+  }, [ready, user, placementId, step, whatHappened, soWhat, nowWhat, reflectedOn, selected, skills, reflectionItemCodes, flagsToSave])
 
   const totals = useLiveQuery(
     async () => {
@@ -245,11 +256,19 @@ export function ReflectionEditor({
   }
 
   function goReview() {
-    if (!mappingInit.current) {
-      // Pre-select the inferred standards unless the student turned tag
-      // suggestions off in settings (then they start from a blank mapping).
-      setSelected(taggingOn ? new Set(suggested) : new Set())
-      mappingInit.current = true
+    // Merge any newly-inferred standards (e.g. after adding a skill), unless the
+    // student turned tag suggestions off. Never re-adds ones they removed.
+    if (taggingOn) {
+      setSelected((prev) => {
+        const next = new Set(prev)
+        for (const id of suggested) {
+          if (!appliedSuggestions.current.has(id)) {
+            next.add(id)
+            appliedSuggestions.current.add(id)
+          }
+        }
+        return next
+      })
     }
     setStep('review')
   }
@@ -269,6 +288,7 @@ export function ReflectionEditor({
       nowWhat,
       reflectedOn,
       standardIds: [...selected],
+      itemCodes: reflectionItemCodes,
       skills,
       identifierFlags: flagsToSave,
       status: 'saved',
@@ -469,6 +489,11 @@ export function ReflectionEditor({
             <Button onClick={goReview} disabled={skills.length === 0}>
               Next: confirm mapping →
             </Button>
+            {mode === 'full' && (
+              <Button variant="ghost" onClick={() => setStep('reflect')}>
+                ← Back to reflection
+              </Button>
+            )}
           </div>
         )}
 
@@ -561,6 +586,9 @@ export function ReflectionEditor({
 
             <Button onClick={finish}>
               Save reflection<span aria-hidden>.</span>
+            </Button>
+            <Button variant="ghost" onClick={() => setStep('skills')}>
+              ← Back to skills
             </Button>
           </div>
         )}

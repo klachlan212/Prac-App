@@ -63,12 +63,16 @@ async function pushReflection(supabase: SB, id: string): Promise<void> {
   })
   if (error) throw error
 
-  // Replace the standard join rows for this reflection.
+  // Replace the standard join rows for this reflection. Carry the item-level
+  // code per standard (e.g. "4.2" → Standard 4) so the 23-item granularity is
+  // preserved across sync and auditable, not just the standard ordinal.
   await supabase.from('reflection_standards').delete().eq('reflection_id', r.id)
   if (r.standardIds.length > 0) {
     const rows = r.standardIds.map((standard_id) => ({
       reflection_id: r.id,
       standard_id,
+      item_code:
+        (r.itemCodes ?? []).find((c) => Number.parseInt(c, 10) === standard_id) ?? null,
     }))
     const { error: sErr } = await supabase.from('reflection_standards').insert(rows)
     if (sErr) throw sErr
