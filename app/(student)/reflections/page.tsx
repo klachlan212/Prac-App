@@ -14,6 +14,36 @@ import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
 import { WARD_TO_GUIDE } from '@/src/content/guides'
 
+// ISO week key (year + week number) for the gentle weekly streak.
+function weekKey(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  const target = new Date(d.valueOf())
+  const dayNr = (d.getDay() + 6) % 7
+  target.setDate(target.getDate() - dayNr + 3)
+  const firstThursday = new Date(target.getFullYear(), 0, 4)
+  const week =
+    1 +
+    Math.round(
+      ((target.getTime() - firstThursday.getTime()) / 86400000 -
+        3 +
+        ((firstThursday.getDay() + 6) % 7)) /
+        7
+    )
+  return `${target.getFullYear()}-W${week}`
+}
+
+function weekStreak(dates: string[]): number {
+  const weeks = new Set(dates.map(weekKey))
+  let streak = 0
+  const cursor = new Date()
+  for (;;) {
+    if (!weeks.has(weekKey(cursor.toISOString().slice(0, 10)))) break
+    streak++
+    cursor.setDate(cursor.getDate() - 7)
+  }
+  return streak
+}
+
 export default function ReflectionsPage() {
   const router = useRouter()
   const { user, loading } = useUser()
@@ -69,6 +99,10 @@ export default function ReflectionsPage() {
     return (reflections ?? []).every((r) => r.reflectedOn < iso)
   }, [reflections])
 
+  // Gentle weekly streak: consecutive ISO weeks (ending this week) with a
+  // reflection. Rewards steady logging without daily pressure.
+  const streak = useMemo(() => weekStreak((reflections ?? []).map((r) => r.reflectedOn)), [reflections])
+
   async function handleDelete(id: string) {
     await softDeleteReflection(id)
     setUndo({ id })
@@ -92,15 +126,22 @@ export default function ReflectionsPage() {
   return (
     <AppShell userId={user.id}>
       <div className="space-y-5">
-        <div className="flex items-end justify-between">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">
-            Your reflections<span className="text-teal">.</span>
-          </h1>
-          <span className="font-mono text-xs text-ink-faint">
-            {count} · {coverage} of 7 std
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight">
+              Today<span className="text-teal">.</span>
+            </h1>
+            <p className="mt-1 text-sm text-ink-soft">{placementName}</p>
+          </div>
+          <span className="shrink-0 text-right font-mono text-xs text-ink-faint">
+            {streak > 0 && (
+              <span className="block font-semibold text-teal-deep">🔥 {streak}-week streak</span>
+            )}
+            <span className="block">
+              {count} · {coverage}/7 std
+            </span>
           </span>
         </div>
-        <p className="-mt-3 text-sm text-ink-soft">{placementName}</p>
 
         <div className="flex gap-2">
           <Link href="/reflections/new" className="flex-1">
@@ -146,8 +187,10 @@ export default function ReflectionsPage() {
             </p>
           </Card>
         ) : (
-          <ul className="space-y-3">
-            {reflections?.map((r) => {
+          <div className="space-y-3">
+            <h2 className="pt-1 font-display text-lg font-semibold">Recent reflections</h2>
+            <ul className="space-y-3">
+              {reflections?.map((r) => {
               const toReview = (r.identifierFlags ?? []).filter((f) => f.status === 'open').length
               return (
                 <li key={r.id}>
@@ -200,12 +243,13 @@ export default function ReflectionsPage() {
                 </li>
               )
             })}
-          </ul>
+            </ul>
+          </div>
         )}
       </div>
 
       {undo && (
-        <div className="fixed inset-x-0 bottom-4 z-20 mx-auto flex max-w-sm items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-paper shadow-float">
+        <div className="fixed inset-x-0 bottom-24 z-30 mx-auto flex max-w-sm items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-paper shadow-float">
           <span>Reflection deleted</span>
           <button
             onClick={async () => {
