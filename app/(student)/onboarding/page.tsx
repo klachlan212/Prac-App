@@ -6,6 +6,7 @@ import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
+import { WARD_TO_GUIDE } from '@/src/content/guides'
 import { Button, Card } from '@/src/ui/components'
 
 // First-run setup (spec §2). Tap-select only — the one text field (email) was
@@ -88,7 +89,12 @@ export default function OnboardingPage() {
         specialty && specialty !== 'Not sure yet' && specialty !== 'None of these'
           ? specialty
           : undefined
-      await createPlacement(user.id, { ward })
+      // "Just looking around" is an orientation path — don't create a placeholder
+      // placement (it would be an empty, misleading record). One is created lazily
+      // if/when they actually log a shift.
+      if (context !== 'exploring') {
+        await createPlacement(user.id, { ward })
+      }
 
       const token = new URLSearchParams(window.location.search).get('invite')
       if (token) await createClient().rpc('accept_invitation', { p_token: token })
@@ -102,6 +108,8 @@ export default function OnboardingPage() {
   }
 
   if (loading || !user) return null
+
+  const guideSlug = specialty ? WARD_TO_GUIDE[specialty] : undefined
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-8">
@@ -200,7 +208,13 @@ export default function OnboardingPage() {
         {step === 'specialty' && (
           <Stepper
             eyebrow="Quick setup · 2 of 2"
-            title={context === 'placement' ? 'Which ward are you on?' : 'Which placement is coming up?'}
+            title={
+              context === 'placement'
+                ? 'Which ward are you on?'
+                : context === 'exploring'
+                  ? 'Which ward are you curious about?'
+                  : 'Which placement is coming up?'
+            }
             lede="Pick the closest — you can change it any time."
           >
             <div className="flex flex-wrap gap-2.5">
@@ -239,29 +253,70 @@ export default function OnboardingPage() {
               ✓
             </div>
             <h1 className="mt-6 font-display text-2xl font-semibold tracking-tight">
-              You’re set up<span className="text-teal">.</span>
+              {context === 'exploring' ? 'You’re in' : 'You’re set up'}
+              <span className="text-teal">.</span>
             </h1>
             <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-ink-soft">
               {context === 'placement'
                 ? 'Your placement’s ready. Let’s capture your first shift.'
-                : 'Your placement’s saved and ready when you are.'}
+                : context === 'upcoming'
+                  ? 'Your placement’s saved and ready when you are.'
+                  : 'Have a look around — nothing to fill in yet. Here’s where everything lives.'}
             </p>
-            <Card className="mt-6 flex items-start gap-3 border-sage-200 bg-sage-50 text-left">
-              <span aria-hidden>🌱</span>
-              <span className="text-sm leading-relaxed text-ink-soft">
-                Everything you log now quietly builds the record your final-year self uses for grad
-                applications.
-              </span>
-            </Card>
-            <div className="mt-8 w-full">
-              {context === 'placement' ? (
-                <Button onClick={() => router.replace('/reflections/new')}>
-                  Write your first reflection<span aria-hidden>.</span>
-                </Button>
-              ) : (
-                <Button onClick={() => router.replace('/reflections')}>Go to your reflections</Button>
-              )}
-            </div>
+
+            {context === 'exploring' ? (
+              <>
+                <div className="mt-6 w-full space-y-2.5 text-left">
+                  <Signpost emoji="📝" title="Reflect" sub="After a shift — about two minutes." />
+                  <Signpost emoji="📚" title="Resources" sub="Hospital guides and ward tips, free." />
+                  <Signpost
+                    emoji="🌱"
+                    title="Your record"
+                    sub="What you log builds toward grad applications."
+                  />
+                </div>
+                {guideSlug && (
+                  <button
+                    onClick={() => router.push(`/guides/${guideSlug}`)}
+                    className="mt-4 flex w-full items-center gap-3 rounded-card border border-sage-200 bg-sage-50 p-4 text-left shadow-card transition hover:border-sage-300"
+                  >
+                    <span aria-hidden>🏥</span>
+                    <span className="flex-1 text-sm font-medium">
+                      Start with the {specialty} ward guide
+                    </span>
+                    <span className="text-sage-300" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                )}
+                <div className="mt-8 w-full">
+                  <Button onClick={() => router.replace('/reflections')}>
+                    Explore Prac<span aria-hidden>.</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Card className="mt-6 flex items-start gap-3 border-sage-200 bg-sage-50 text-left">
+                  <span aria-hidden>🌱</span>
+                  <span className="text-sm leading-relaxed text-ink-soft">
+                    Everything you log now quietly builds the record your final-year self uses for grad
+                    applications.
+                  </span>
+                </Card>
+                <div className="mt-8 w-full">
+                  {context === 'placement' ? (
+                    <Button onClick={() => router.replace('/reflections/new')}>
+                      Write your first reflection<span aria-hidden>.</span>
+                    </Button>
+                  ) : (
+                    <Button onClick={() => router.replace('/reflections')}>
+                      Go to your reflections
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -289,6 +344,23 @@ function Stepper({
       <h1 className="font-display text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{lede}</p>
       <div className="mt-6 flex flex-1 flex-col">{children}</div>
+    </div>
+  )
+}
+
+function Signpost({ emoji, title, sub }: { emoji: string; title: string; sub: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-card border border-sage-200 bg-surface p-3.5 shadow-card">
+      <span
+        className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100 text-lg"
+        aria-hidden
+      >
+        {emoji}
+      </span>
+      <span className="flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="block text-[13px] text-ink-soft">{sub}</span>
+      </span>
     </div>
   )
 }
