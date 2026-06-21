@@ -13,6 +13,7 @@ import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
 import { WARD_TO_GUIDE } from '@/src/content/guides'
+import { todayISO } from '@/src/data/ids'
 
 // ISO week key (year + week number) for the gentle weekly streak.
 function weekKey(dateStr: string): string {
@@ -42,6 +43,34 @@ function weekStreak(dates: string[]): number {
     cursor.setDate(cursor.getDate() - 7)
   }
   return streak
+}
+
+function fmtDate(iso?: string): string {
+  if (!iso) return ''
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+function daysFromToday(iso: string): number {
+  const ms = new Date(iso + 'T00:00:00').getTime() - new Date(todayISO() + 'T00:00:00').getTime()
+  return Math.round(ms / 86400000)
+}
+
+// Date range + a "days left" / "starts in" / "ended" status for the placement card.
+function placementInfo(p: { startDate?: string; endDate?: string }): { range: string; status: string } {
+  const range = [fmtDate(p.startDate), fmtDate(p.endDate)].filter(Boolean).join(' – ')
+  const today = todayISO()
+  let status = ''
+  if (p.startDate && today < p.startDate) {
+    const n = daysFromToday(p.startDate)
+    status = `Starts in ${n} day${n === 1 ? '' : 's'}`
+  } else if (p.endDate) {
+    if (today > p.endDate) status = 'Placement ended'
+    else {
+      const n = daysFromToday(p.endDate)
+      status = n === 0 ? 'Last day' : `${n} day${n === 1 ? '' : 's'} left`
+    }
+  }
+  return { range, status }
 }
 
 export default function ReflectionsPage() {
@@ -122,6 +151,7 @@ export default function ReflectionsPage() {
     placement?.ward || placement?.hospital
       ? [placement?.ward, placement?.hospital].filter(Boolean).join(' · ')
       : 'Your placement'
+  const info = placement ? placementInfo(placement) : null
 
   return (
     <AppShell userId={user.id}>
@@ -131,7 +161,6 @@ export default function ReflectionsPage() {
             <h1 className="font-display text-2xl font-semibold tracking-tight">
               Today<span className="text-teal">.</span>
             </h1>
-            <p className="mt-1 text-sm text-ink-soft">{placementName}</p>
           </div>
           <span className="shrink-0 text-right font-mono text-xs text-ink-faint">
             {streak > 0 && (
@@ -142,6 +171,31 @@ export default function ReflectionsPage() {
             </span>
           </span>
         </div>
+
+        <Link href="/placement" className="block">
+          <Card className="flex items-center gap-3 transition hover:border-sage-300">
+            <span className="text-lg" aria-hidden>
+              📍
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{placementName}</span>
+              <span className="mt-0.5 block text-xs text-ink-soft">
+                {info && (info.range || info.status) ? (
+                  <>
+                    {info.range}
+                    {info.range && info.status ? ' · ' : ''}
+                    {info.status && (
+                      <span className="font-semibold text-teal-deep">{info.status}</span>
+                    )}
+                  </>
+                ) : (
+                  'Add your ward, hospital & dates'
+                )}
+              </span>
+            </span>
+            <span className="shrink-0 text-xs font-medium text-teal-deep">Edit</span>
+          </Card>
+        </Link>
 
         <div className="flex gap-2">
           <Link href="/reflections/new" className="flex-1">

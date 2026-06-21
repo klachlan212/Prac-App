@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HospitalsDirectory } from '@/src/ui/hospital/HospitalsDirectory'
+import { BottomNav } from '@/src/ui/BottomNav'
 
 // Public, ungated directory — practical placement logistics, hospital by hospital.
 // Like the ward guides, it lives outside the auth group so it catches search and
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function HospitalsPage() {
   return (
-    <main className="mx-auto max-w-xl px-5 py-10">
+    <main className="mx-auto max-w-xl px-5 py-10 pb-28">
       <div className="font-display text-2xl font-semibold tracking-tight">
         Prac<span className="text-teal">.</span>
       </div>
@@ -42,6 +43,7 @@ export default function HospitalsPage() {
         Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
         change: always read the signage and check with your facilitator.
       </p>
+      <BottomNav />
     </main>
   )
 }

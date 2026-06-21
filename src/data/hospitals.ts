@@ -13,7 +13,8 @@ export function getVoterToken(): string {
   if (typeof window === 'undefined') return ''
   let t = localStorage.getItem(VOTER_KEY)
   if (!t) {
-    t = crypto.randomUUID()
+    // crypto.randomUUID needs a secure context; fall back if it's unavailable.
+    t = globalThis.crypto?.randomUUID?.() ?? `tok-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
     localStorage.setItem(VOTER_KEY, t)
   }
   return t

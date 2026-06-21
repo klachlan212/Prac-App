@@ -23,6 +23,7 @@ import {
   fetchTips,
 } from '@/src/data/hospitals'
 import { SubmissionForm } from './SubmissionForm'
+import { BottomNav } from '@/src/ui/BottomNav'
 
 type SortMode = 'helpful' | 'latest'
 type VoteDir = 'up' | 'down' | null
@@ -154,7 +155,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-xl px-5 py-8">
+      <main className="mx-auto max-w-xl px-5 py-8 pb-28">
         {brand}
         <p className="mt-10 text-center text-sm text-ink-faint">Loading…</p>
       </main>
@@ -163,7 +164,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
 
   if (!hospital) {
     return (
-      <main className="mx-auto max-w-xl px-5 py-8">
+      <main className="mx-auto max-w-xl px-5 py-8 pb-28">
         {brand}
         <p className="mt-10 text-center text-sm text-ink-soft">
           We don’t have a directory for this hospital yet.
@@ -178,7 +179,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-5 py-8">
+    <main className="mx-auto max-w-xl px-5 py-8 pb-28">
       {brand}
 
       {/* Header */}
@@ -282,6 +283,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
         defaultHospitalId={hospital.id}
         defaultCategory={form.category}
       />
+      <BottomNav />
     </main>
   )
 }

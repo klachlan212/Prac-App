@@ -9,6 +9,14 @@ import { todayISO } from '@/src/data/ids'
 const MAX = 300
 const REQUEST_NEW = '__request_new__'
 
+// Show the real failure (rate limit, validation, etc.) rather than masking every
+// error as a connection problem; genuine network failures keep the friendly text.
+function submitError(err: unknown, fallback: string): string {
+  const m = err instanceof Error ? err.message : ''
+  if (!m || /failed to fetch|networkerror|load failed|fetch/i.test(m)) return fallback
+  return m
+}
+
 export interface SubmissionFormProps {
   open: boolean
   onClose: () => void
@@ -91,8 +99,8 @@ export function SubmissionForm({
       try {
         await requestHospital({ name: requestName.trim(), note: text.trim() || null, anonymous })
         setDone(true)
-      } catch {
-        setError('Couldn’t send just now — check your connection and try again.')
+      } catch (err) {
+        setError(submitError(err, 'Couldn’t send just now — check your connection and try again.'))
       } finally {
         setSubmitting(false)
       }
@@ -118,8 +126,8 @@ export function SubmissionForm({
         anonymous,
       })
       setDone(true)
-    } catch {
-      setError('Couldn’t submit just now — check your connection and try again.')
+    } catch (err) {
+      setError(submitError(err, 'Couldn’t submit just now — check your connection and try again.'))
     } finally {
       setSubmitting(false)
     }

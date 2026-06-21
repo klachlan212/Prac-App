@@ -55,3 +55,21 @@ export async function archivePlacement(id: string): Promise<void> {
   await enqueue('placement', id, 'upsert')
   void flush()
 }
+
+/** Edit the current placement's details in place (ward / hospital / dates). */
+export async function updatePlacement(id: string, patch: PlacementInput): Promise<void> {
+  await db.placements.update(id, { ...patch, updatedAt: nowISO(), synced: 0 })
+  await enqueue('placement', id, 'upsert')
+  void flush()
+}
+
+/**
+ * Move to a new placement: archive the current active one (its reflections stay
+ * attached to it as a separate, still-exportable record) and create a fresh
+ * active placement. Reflections are never moved or deleted.
+ */
+export async function startNewPlacement(userId: string, input: PlacementInput): Promise<string> {
+  const current = await getActivePlacement(userId)
+  if (current) await archivePlacement(current.id)
+  return createPlacement(userId, input)
+}
