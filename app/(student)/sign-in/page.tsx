@@ -87,13 +87,13 @@ function SignInForm() {
 
         <div className="space-y-1 text-center">
           <h1 className="font-display text-2xl font-semibold tracking-tight">
-            {mode === 'otp-code' ? 'Check your email' : 'Welcome back'}
+            {mode === 'otp-code' ? 'Check your email' : mode === 'password' ? 'Staff sign-in' : 'Welcome'}
           </h1>
           <p className="text-sm text-ink-soft">
             {mode === 'password'
-              ? 'Sign in to your reflective record.'
+              ? 'Sign in with your password.'
               : mode === 'otp-email'
-                ? 'We’ll email you a sign-in code.'
+                ? 'Enter your email — we’ll send a sign-in code. New or returning, same way in.'
                 : `Enter the code we sent to ${email}.`}
           </p>
         </div>
