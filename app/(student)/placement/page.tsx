@@ -207,12 +207,12 @@ export default function PlacementPage() {
             </p>
             {!confirmNew ? (
               <Button variant="quiet" className="w-auto px-5" onClick={() => setConfirmNew(true)}>
-                Start a new placement →
+                Start a new placement
               </Button>
             ) : (
               <div className="flex flex-wrap gap-2">
                 <Button className="w-auto px-5" onClick={beginNew} disabled={busy}>
-                  Yes — keep old reflections
+                  Yes, keep old reflections
                 </Button>
                 <Button variant="ghost" className="w-auto px-4" onClick={() => setConfirmNew(false)}>
                   Cancel

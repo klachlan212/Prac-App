@@ -12,6 +12,7 @@ import { scanIdentifiers } from '@/src/tagging/identifiers'
 import { newId } from '@/src/data/ids'
 import { exportPlacement, type ExportData } from '@/src/export/exportPlacement'
 import type { Placement } from '@/src/data/types'
+import { Check, Flag, Info } from 'lucide-react'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
 
@@ -227,12 +228,12 @@ export default function ExportPage() {
             </div>
 
             <div className="rounded-card border border-line border-l-[3px] border-l-ink-faint bg-surface p-3.5 text-xs leading-relaxed text-ink-soft">
-              This exports as a document you keep — <b className="text-ink">your reflective record.</b>{' '}
+              This exports as a document you keep, <b className="text-ink">your reflective record.</b>{' '}
               It&rsquo;s a record of your learning, not a competency assessment or proof of practice.
             </div>
 
             <Button disabled={count === 0} onClick={checkIdentifiers}>
-              Check for identifiers →
+              Check for identifiers
             </Button>
 
             <hr className="border-line" />
@@ -246,8 +247,9 @@ export default function ExportPage() {
         {step === 'gate' && (
           <>
             <div className="-mx-4 -mt-6 border-b border-flag-line bg-flag-bg px-4 pb-4 pt-5">
-              <p className="font-mono text-[11px] uppercase tracking-wider text-flag">
-                ⚑ Before you share this
+              <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-flag">
+                <Flag className="h-3.5 w-3.5" aria-hidden />
+                Before you share this
               </p>
               <h1 className="mt-1.5 font-display text-xl font-semibold leading-tight text-flag-ink">
                 {issues.length > 0
@@ -296,11 +298,9 @@ export default function ExportPage() {
             )}
 
             <div className="flex items-start gap-2 rounded-card border border-line bg-surface p-3 text-xs leading-relaxed text-ink-soft">
-              <span className="text-ink-faint" aria-hidden>
-                ℹ
-              </span>
+              <Info className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
               <span>
-                <b className="text-ink">Prac. catches common identifiers</b> — names, ages, bed and
+                <b className="text-ink">Prac. catches common identifiers</b>: names, ages, bed and
                 room numbers, dates. It won&rsquo;t catch everything. What&rsquo;s left is yours to
                 check before you share.
               </span>
@@ -309,7 +309,7 @@ export default function ExportPage() {
             <Button disabled={issues.length > 0} onClick={() => setStep('ready')}>
               {issues.length > 0
                 ? `${issues.length} to review`
-                : 'Generate my record →'}
+                : 'Generate my record'}
             </Button>
             <Button variant="ghost" onClick={() => setStep('scope')}>
               Back
@@ -320,8 +320,8 @@ export default function ExportPage() {
         {/* ---------------- RECORD READY ---------------- */}
         {step === 'ready' && (
           <div className="flex flex-col items-center py-4 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal text-2xl font-bold text-teal-ink">
-              ✓
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal text-teal-ink">
+              <Check className="h-8 w-8" strokeWidth={2.5} aria-hidden />
             </div>
             <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight">
               Record ready<span className="text-teal">.</span>

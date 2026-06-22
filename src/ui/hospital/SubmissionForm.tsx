@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Check } from 'lucide-react'
 import { Button, Field, Input, Label } from '@/src/ui/components'
 import { CATEGORIES, type Hospital, type TipCategory, type Confidence } from '@/src/content/hospitals'
 import { submitTip, requestHospital } from '@/src/data/hospitals'
@@ -148,8 +149,8 @@ export function SubmissionForm({
       >
         {done ? (
           <div className="py-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-new text-xl text-teal-deep">
-              ✓
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-new text-teal-deep">
+              <Check className="h-6 w-6" aria-hidden />
             </div>
             <h2 className="mt-4 font-display text-xl font-semibold tracking-tight">Thanks.</h2>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">

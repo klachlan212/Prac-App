@@ -251,7 +251,7 @@ _Adopted from the 22 Jun UI-polish review. Apply to every new or touched surface
 - **`user-select: none` on non-text UI.** Buttons, labels, and `[role=button]` are handled globally in `globals.css`; add `select-none` to decorative spans (step numbers, status badges, pills, nav glyphs).
 - **Minimum font size.** Subtitle/body copy ≥ 12px (`text-xs`); `text-[10px]/[11px]` is for rare mono micro-labels only. Keep tiny subtitles few — prefer one clear subtitle over stacked micro-text (cognitive load).
 - **Consistent hierarchy.** Empty states, list rows, and cards share one scale (icon sizes, line-heights, heading/subtitle steps). When adding an empty state, mirror an existing one.
-- **Page transitions.** Use the View Transitions API for route changes, enabled app-wide.
+- **Page transitions.** Smooth fade/rise on every route change via `app/template.tsx`; `@view-transition { navigation: auto }` adds native cross-document transitions where supported. Honour `prefers-reduced-motion`.
 - **Public marketing site (`/`, guides, hospitals, legal):** keep a marketing footer and a header "Sign in" (top-right) for returning users; the primary CTA drives install. **Do not** show the authenticated app's bottom tab bar to logged-out visitors — let them explore the genuinely-public pages (guides, hospitals) instead.
 - **Carry state forward.** Never ask for the same input twice — e.g. an email entered on the landing flows into sign-in and auto-triggers the code send.
 - **Landing mocks track the real UI.** When app copy/labels/mapping change, update the landing screenshot mock to match.

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getGuide, GUIDES } from '@/src/content/guides'
 import { BottomNav } from '@/src/ui/BottomNav'
+import { Check, Plus, Pencil, LayoutGrid } from 'lucide-react'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
 // Public, ungated funnel page (spec §6) — outside the auth group on purpose so it
@@ -107,14 +108,15 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       </section>
 
       <p className="mt-6 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
-        Written by a nurse who’s worked these wards. General guidance from experience — not
+        Written by a nurse who’s worked these wards. General guidance from experience, not
         clinical instruction. Always follow your facility’s protocols and your facilitator.
       </p>
 
       {/* Soft conversion — after the value, framed as reciprocity (spec §6). */}
       <section className="mt-10 rounded-card border border-line bg-surface p-5 shadow-card">
         <span className="inline-flex items-center gap-1.5 rounded-lg bg-new px-2.5 py-1 text-xs font-semibold text-teal-deep">
-          ✓ You just read the whole guide — free
+          <Check className="h-4 w-4" aria-hidden />
+          You just read the whole guide, free
         </span>
         <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight">
           Want it working <span className="italic">for</span> you on the ward
@@ -125,23 +127,17 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
         </p>
         <ul className="mt-3 space-y-2.5 text-sm text-ink-soft">
           <li className="flex gap-2.5">
-            <span className="text-teal-deep" aria-hidden>
-              ＋
-            </span>
+            <Plus className="mt-0.5 h-4 w-4 shrink-0 text-teal-deep" aria-hidden />
             <span>
-              Those skills, one tap to log as you do them — mapped to <b className="text-ink">your NMBA standards</b>
+              Those skills, one tap to log as you do them, mapped to <b className="text-ink">your NMBA standards</b>
             </span>
           </li>
           <li className="flex gap-2.5">
-            <span className="text-teal-deep" aria-hidden>
-              ✎
-            </span>
+            <Pencil className="mt-0.5 h-4 w-4 shrink-0 text-teal-deep" aria-hidden />
             <span>Those prompts waiting for you at 9pm, in two minutes flat</span>
           </li>
           <li className="flex gap-2.5">
-            <span className="text-teal-deep" aria-hidden>
-              ▦
-            </span>
+            <LayoutGrid className="mt-0.5 h-4 w-4 shrink-0 text-teal-deep" aria-hidden />
             <span>
               A reflective record that <b className="text-ink">builds across all your years</b>, not one ward
             </span>
@@ -151,10 +147,10 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           href="/sign-in"
           className="mt-5 flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-teal px-5 font-semibold text-teal-ink shadow-[0_6px_18px_rgba(78,205,196,.35)] transition hover:bg-teal-bright"
         >
-          Start using Prac. — free
+          Start using Prac. for free
         </Link>
         <p className="mt-3 text-center text-xs text-ink-faint">
-          The guide stays free either way. No spam — leave any time.
+          The guide stays free either way. No spam, leave any time.
         </p>
       </section>
       <SiteFooter />

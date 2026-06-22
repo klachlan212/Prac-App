@@ -9,9 +9,9 @@ import { SiteFooter } from '@/src/ui/SiteFooter'
 // (HospitalsDirectory) so moderator additions show up without a redeploy.
 
 export const metadata: Metadata = {
-  title: 'Hospital directory — placement logistics · Prac.',
+  title: 'Hospital directory · placement logistics · Prac.',
   description:
-    'Parking, access, food and culture for Australian hospital placements — the practical stuff, hospital by hospital. Curated and human-reviewed.',
+    'Parking, access, food and culture for Australian hospital placements: the practical stuff, hospital by hospital. Curated and human-reviewed.',
 }
 
 export default function HospitalsPage() {
@@ -28,20 +28,20 @@ export default function HospitalsPage() {
         The practical stuff, before day one<span className="text-teal">.</span>
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-        Where to park, how to get in, where to eat, and what shifts actually feel like — pooled from
-        students who’ve been there and checked by a real nurse. So the night before a 6am start is
+        Where to park, how to get in, where to eat, and what shifts actually feel like, pooled from
+        students who’ve been there and checked by a real nurse. So the night before a 7am start is
         one less thing to dread.
       </p>
 
       <p className="mt-4 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
-        Hospital-wide logistics only — no ward-specific tips, gossip, patient details or
+        Hospital-wide logistics only: no ward-specific tips, gossip, patient details or
         confidential operations.
       </p>
 
       <HospitalsDirectory />
 
       <p className="mt-9 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
-        Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
+        Crowd-sourced and reviewed practical guidance, not official hospital instruction. Things
         change: always read the signage and check with your facilitator.
       </p>
       <SiteFooter />

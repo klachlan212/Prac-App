@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { Check, ChevronDown } from 'lucide-react'
 import {
   CATEGORIES,
   categoryMeta,
@@ -171,7 +172,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
         </p>
         <p className="mt-3 text-center">
           <Link href="/hospitals" className="text-sm font-semibold text-teal-deep hover:text-ink">
-            Browse all hospitals →
+            Browse all hospitals
           </Link>
         </p>
       </main>
@@ -194,8 +195,8 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
 
       {/* Trust signal */}
       <div className="mt-5 flex items-center gap-3 rounded-card border border-line bg-surface p-3.5 shadow-card">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-new font-display text-base font-semibold text-teal-deep">
-          ✓
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-new text-teal-deep">
+          <Check className="h-5 w-5" aria-hidden />
         </span>
         <span className="text-[13px] leading-snug">
           <b className="font-semibold">Curated by {hospital.curatedBy}</b>
@@ -344,9 +345,10 @@ function CategorySection({
             {refCards.length > 0 && ` · ${refCards.length} official`}
           </span>
         </span>
-        <span className={`shrink-0 text-ink-faint transition ${open ? 'rotate-180' : ''}`} aria-hidden>
-          ▾
-        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-ink-faint transition ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
       </button>
 
       {open && (
@@ -505,7 +507,7 @@ function TipCardView({
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
           {tip.verifiedBy ? (
             <span className="inline-flex items-center gap-1 font-medium text-teal-deep">
-              <span aria-hidden>✓</span> Verified by {tip.verifiedBy}
+              <Check className="h-3.5 w-3.5" aria-hidden /> Verified by {tip.verifiedBy}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1">
