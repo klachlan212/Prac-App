@@ -16,7 +16,7 @@ const GRAD_BODY =
   'Every reflection and skill you log compounds into a structured record across all your placements. When grad applications land in final year, you are not staring at a blank page trying to remember first year — it is already there, mapped to the standards, ready to export.'
 
 const STRESS_BODY =
-  'The night before a 6am start shouldn’t be spent dreading the unknown. Prac.’s hospital directory and ward guides cover the practical stuff — where to park, how to get in, what the ward actually feels like, and the skills you’ll likely meet — written by nurses who’ve been there.'
+  'The night before a 7am start shouldn’t be spent dreading the unknown. Prac.’s hospital directory and ward guides cover the practical stuff — where to park, how to get in, what the ward actually feels like, and the skills you’ll likely meet — written by nurses who’ve been there.'
 
 const STEPS: { n: string; h: string; b: string }[] = [
   { n: '1', h: 'Reflect', b: 'Three soft prompts. Two minutes, even at 9pm with bad signal — it autosaves as you go.' },
@@ -115,7 +115,7 @@ export default function LandingPage() {
       </section>
 
       {/* ---------- Grad applications payoff ---------- */}
-      <section className="mt-14">
+      <section className="mt-8">
         <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">The long game</p>
         <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
           {'Today’s two minutes — your final-year edge'}
