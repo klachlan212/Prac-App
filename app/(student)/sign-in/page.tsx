@@ -91,7 +91,7 @@ function SignInForm() {
             {mode === 'password'
               ? 'Sign in to your reflective record.'
               : mode === 'otp-email'
-                ? 'We’ll email you a 6-digit code.'
+                ? 'We’ll email you a sign-in code.'
                 : `Enter the code we sent to ${email}.`}
           </p>
         </div>
@@ -126,7 +126,7 @@ function SignInForm() {
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>
             <Button type="button" variant="ghost" onClick={() => { setMode('otp-email'); setError(null) }}>
-              Email me a 6-digit code instead
+              Email me a sign-in code instead
             </Button>
           </form>
         )}
@@ -157,17 +157,17 @@ function SignInForm() {
 
         {mode === 'otp-code' && (
           <form onSubmit={verifyCode} className="space-y-4">
-            <Field label="6-digit code" htmlFor="code">
+            <Field label="Sign-in code" htmlFor="code">
               <Input
                 id="code"
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 pattern="[0-9]*"
-                maxLength={6}
+                maxLength={10}
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                className="text-center text-2xl tracking-[0.5em]"
+                className="text-center text-2xl tracking-[0.3em]"
                 placeholder="••••••"
                 autoFocus
               />
