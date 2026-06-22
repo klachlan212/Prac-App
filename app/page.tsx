@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 const HERO_SUB =
-  'A free companion for Australian nursing students. Write a two-minute reflection after a shift; Prac. maps it to your NMBA standards and quietly builds a record you own — the one your final-year self leans on for grad applications.'
+  'Right now your university holds your placement records — not you. Prac. is the portfolio you own: write a two-minute reflection after each shift, log the skills you used, and it all lives in one place, mapped to your NMBA standards. By final year it’s a complete record of your skills and reflections — ready for your grad applications.'
 
 const GRAD_BODY =
   'Every reflection and skill you log compounds into a structured record across all your placements. When grad applications land in final year, you are not staring at a blank page trying to remember first year — it is already there, mapped to the standards, ready to export.'
@@ -46,7 +46,7 @@ export default function LandingPage() {
 
       <div className="mt-6">
         <EmailCapture />
-        <p className="mt-2 text-xs text-ink-faint">Free for your whole degree · no card · leave anytime.</p>
+        <p className="mt-2 text-xs text-ink-faint">Free to start · No credit card · Leave anytime.</p>
       </div>
 
       {/* App-screen mock: the core loop */}
@@ -78,29 +78,7 @@ export default function LandingPage() {
         </PhoneFrame>
       </div>
 
-      {/* ---------- Grad applications payoff ---------- */}
-      <section className="mt-14">
-        <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">The long game</p>
-        <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
-          {'Today’s two minutes — your final-year edge'}
-          <span className="text-teal">.</span>
-        </h2>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{GRAD_BODY}</p>
-
-        <div className="mt-5 rounded-card border border-line bg-surface p-4 shadow-card">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Your record</p>
-          <div className="mt-3 flex items-end gap-6">
-            <Stat n="38" label="reflections" />
-            <Stat n="6/7" label="standards" />
-            <Stat n="50+" label="skills" />
-          </div>
-          <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-new px-2.5 py-1 text-xs font-semibold text-teal-deep">
-            ⤓ Export for grad applications
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- Pre-placement stress / guides ---------- */}
+      {/* ---------- Pre-placement stress / guides (before reflections come into play) ---------- */}
       <section className="mt-14">
         <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">Before day one</p>
         <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
@@ -136,18 +114,41 @@ export default function LandingPage() {
         <p className="mt-2 text-xs text-ink-faint">No account needed to look around.</p>
       </section>
 
-      {/* ---------- How it works ---------- */}
+      {/* ---------- Grad applications payoff ---------- */}
       <section className="mt-14">
-        <h2 className="font-display text-2xl font-semibold leading-tight tracking-tight">
-          How it works<span className="text-teal">.</span>
+        <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">The long game</p>
+        <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
+          {'Today’s two minutes — your final-year edge'}
+          <span className="text-teal">.</span>
         </h2>
-        <div className="mt-5 space-y-4">
+        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{GRAD_BODY}</p>
+
+        <div className="mt-5 rounded-card border border-line bg-surface p-4 shadow-card">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Your record</p>
+          <div className="mt-3 flex items-end gap-6">
+            <Stat n="38" label="reflections" />
+            <Stat n="6/7" label="standards" />
+            <Stat n="50+" label="skills" />
+          </div>
+          <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-new px-2.5 py-1 text-xs font-semibold text-teal-deep">
+            ⤓ Export for grad applications
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- How it works (highlighted panel) ---------- */}
+      <section className="mt-14 rounded-card border border-sage-200 bg-sage-50 p-6 shadow-card">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">How it works</p>
+        <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
+          Three steps, two minutes<span className="text-teal">.</span>
+        </h2>
+        <div className="mt-6 space-y-5">
           {STEPS.map((s) => (
-            <div key={s.n} className="flex gap-3.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-new font-display text-sm font-semibold text-teal-deep">
+            <div key={s.n} className="flex gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal font-display text-base font-semibold text-teal-ink shadow-card">
                 {s.n}
               </span>
-              <div>
+              <div className="pt-1">
                 <p className="text-[15px] font-semibold">{s.h}</p>
                 <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">{s.b}</p>
               </div>
@@ -157,16 +158,18 @@ export default function LandingPage() {
       </section>
 
       {/* ---------- Final CTA ---------- */}
-      <section className="mt-14 rounded-card border border-line bg-surface p-5 shadow-card">
+      <section className="mt-14 rounded-card border-2 border-teal/50 bg-surface p-6 shadow-card">
         <h2 className="font-display text-2xl font-semibold leading-tight tracking-tight">
-          Start building your record — free<span className="text-teal">.</span>
+          Start the portfolio you own<span className="text-teal">.</span>
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          One email is all it takes. Log in once and Prac. remembers you across the whole degree.
+          Pop in your email — personal or uni — and you’re in. Your record starts with your next
+          shift, and it’s yours to keep.
         </p>
         <div className="mt-4">
-          <EmailCapture cta="Get started →" />
+          <EmailCapture />
         </div>
+        <p className="mt-2 text-xs text-ink-faint">Free to start · No credit card · Leave anytime.</p>
       </section>
 
       <SiteFooter />

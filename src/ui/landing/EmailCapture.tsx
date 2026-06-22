@@ -7,7 +7,7 @@ import { Button, Input } from '@/src/ui/components'
 // The landing's primary action: capture the email and carry it into /sign-in
 // (prefilled there) so a student starts in one move. Kept deliberately simple —
 // it hands off to the real auth screen rather than triggering auth here.
-export function EmailCapture({ cta = 'Start free →' }: { cta?: string }) {
+export function EmailCapture({ cta = 'Get the app →' }: { cta?: string }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
 
@@ -26,7 +26,7 @@ export function EmailCapture({ cta = 'Start free →' }: { cta?: string }) {
         aria-label="Email address"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@student.edu.au"
+        placeholder="Your email — personal or uni"
         className="flex-1"
       />
       <Button type="submit" className="whitespace-nowrap sm:w-auto sm:px-6">
