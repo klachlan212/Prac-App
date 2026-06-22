@@ -13,4 +13,13 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+
+  /* Non-text UI is not text-selectable (CLAUDE.md A7). Decorative spans
+     (number bubbles, badges) add `select-none` locally. */
+  button,
+  label,
+  [role='button'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }

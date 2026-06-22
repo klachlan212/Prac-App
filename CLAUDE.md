@@ -242,7 +242,21 @@ _Carried over from the prior engineering CLAUDE.md when the product spec above b
 - [ ] "ANSAT" appears in **no** user-facing copy (§0.2); honesty copy respected (§4) — never "safe"/"de-identified".
 - [ ] Committed with a clear message and pushed to the feature branch; anything skipped/unverified is stated plainly.
 
-### A7. Decisions log (condensed)
+### A7. UI & copy conventions (codified design rules)
+_Adopted from the 22 Jun UI-polish review. Apply to every new or touched surface; sweep opportunistically._
+
+- **No em dashes in user-facing copy.** Use commas, full stops, colons, parentheses, or "to" for ranges. (They render inconsistently and aren't the brand voice.) Code comments are exempt.
+- **Icons, not glyphs.** Never ship raw UTF symbols as UI (`+`, `✓`, `→`, `›`, `★`) — they vary in weight/baseline across platforms. Use **Lucide** (`lucide-react`, monochrome, `currentColor`) as the primary icon set for affordances (nav, buttons, list markers, checks, chevrons, plus). Reserve **colourful emoji** for occasional warmth/illustration, and when used, use **Microsoft Fluent UI Emoji** assets (consistent across Apple/Android), never the platform's native emoji font. Default to Lucide; emoji is the exception.
+- **Buttons must read as buttons.** Any action that isn't inline body text gets a button/affordance treatment (fill, border, or pill), not bare coloured text. A trailing arrow alone is not enough.
+- **`user-select: none` on non-text UI.** Buttons, labels, and `[role=button]` are handled globally in `globals.css`; add `select-none` to decorative spans (step numbers, status badges, pills, nav glyphs).
+- **Minimum font size.** Subtitle/body copy ≥ 12px (`text-xs`); `text-[10px]/[11px]` is for rare mono micro-labels only. Keep tiny subtitles few — prefer one clear subtitle over stacked micro-text (cognitive load).
+- **Consistent hierarchy.** Empty states, list rows, and cards share one scale (icon sizes, line-heights, heading/subtitle steps). When adding an empty state, mirror an existing one.
+- **Page transitions.** Use the View Transitions API for route changes, enabled app-wide.
+- **Public marketing site (`/`, guides, hospitals, legal):** keep a marketing footer and a header "Sign in" (top-right) for returning users; the primary CTA drives install. **Do not** show the authenticated app's bottom tab bar to logged-out visitors — let them explore the genuinely-public pages (guides, hospitals) instead.
+- **Carry state forward.** Never ask for the same input twice — e.g. an email entered on the landing flows into sign-in and auto-triggers the code send.
+- **Landing mocks track the real UI.** When app copy/labels/mapping change, update the landing screenshot mock to match.
+
+### A8. Decisions log (condensed)
 - Migrations + seeds applied to Supabase (Sydney); RLS verified.
 - **Production deploy saga, resolved:** `main` was a static Hello-World placeholder → app promoted to `main`; middleware removed entirely (it 500'd in every form) in favour of the client guard; the "all routes 404" was a wrong-URL + Vercel build-settings issue, plus Deployment Protection. App now serves on the canonical domain. **Do not reintroduce middleware.**
 - Added email+password sign-in to dodge Supabase free-tier OTP email limits. **Tension:** the spec (§2) wants **passwordless/magic-link** for the multi-year handoff — treat password as a dev-only convenience and revisit before v1.

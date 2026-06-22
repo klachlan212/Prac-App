@@ -1,17 +1,15 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/src/auth/client'
 import { Button, Field, Input } from '@/src/ui/components'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
-// Two sign-in methods (CLAUDE.md §A7):
-//  - Password (email + password): default; sidesteps the free-tier one-time-code
-//    email rate limits during dev.
-//  - Email one-time code: passwordless fallback. (Spec §2 wants magic-link as the
-//    long-term default for the multi-year handoff — revisit before v1.)
+// Sign-in methods (CLAUDE.md §A7):
+//  - Email one-time code: the default for everyone (passwordless).
+//  - Password: a discreet operator fallback, reached via /sign-in?staff.
 type Mode = 'password' | 'otp-email' | 'otp-code'
 
 function SignInForm() {
@@ -42,8 +40,7 @@ function SignInForm() {
     router.replace('/reflections')
   }
 
-  async function sendCode(e: React.FormEvent) {
-    e.preventDefault()
+  async function requestCode() {
     setError(null)
     setBusy(true)
     const { error } = await createClient().auth.signInWithOtp({
@@ -54,6 +51,22 @@ function SignInForm() {
     if (error) return setError(error.message)
     setMode('otp-code')
   }
+
+  function sendCode(e: React.FormEvent) {
+    e.preventDefault()
+    void requestCode()
+  }
+
+  // Carry state forward (CLAUDE.md A7): arriving from the landing with an email
+  // prefilled, send the code immediately and jump to the code step so the student
+  // never re-enters their email. Runs once; the staff path is exempt.
+  const autoSent = useRef(false)
+  useEffect(() => {
+    if (autoSent.current || isStaff || !initialEmail.trim()) return
+    autoSent.current = true
+    void requestCode()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function verifyCode(e: React.FormEvent) {
     e.preventDefault()
@@ -93,7 +106,7 @@ function SignInForm() {
             {mode === 'password'
               ? 'Sign in with your password.'
               : mode === 'otp-email'
-                ? 'Enter your email — we’ll send a sign-in code. New or returning, same way in.'
+                ? 'Enter your email and we’ll send a sign-in code. New or returning, same way in.'
                 : `Enter the code we sent to ${email}.`}
           </p>
         </div>
@@ -109,7 +122,7 @@ function SignInForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@student.edu.au"
+                placeholder="Your email (personal or uni)"
               />
             </Field>
             <Field label="Password" htmlFor="password">
@@ -144,7 +157,7 @@ function SignInForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@student.edu.au"
+                placeholder="Your email (personal or uni)"
               />
             </Field>
             {error && <p className="text-sm text-flag">{error}</p>}
@@ -157,6 +170,16 @@ function SignInForm() {
               </Button>
             )}
           </form>
+        )}
+
+        {mode === 'otp-email' && (
+          <div className="rounded-card border border-sage-200 bg-sage-50 p-4 text-sm leading-relaxed">
+            <p className="font-semibold text-ink">New to Prac.?</p>
+            <p className="mt-1 text-ink-soft">
+              It’s your own placement portfolio. Write a quick reflection after each shift, log your
+              skills, and keep it all in one place, ready for grad applications.
+            </p>
+          </div>
         )}
 
         {mode === 'otp-code' && (

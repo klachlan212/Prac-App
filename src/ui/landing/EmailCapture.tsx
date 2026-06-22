@@ -26,7 +26,7 @@ export function EmailCapture({ cta = 'Get the app →' }: { cta?: string }) {
         aria-label="Email address"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="Your email — personal or uni"
+        placeholder="Your email (personal or uni)"
         className="flex-1"
       />
       <Button type="submit" className="whitespace-nowrap sm:w-auto sm:px-6">

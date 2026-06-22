@@ -14,7 +14,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({ variant = 'primary', className, ...props }: ButtonProps) {
   const base =
-    'inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl px-5 font-sans text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-paper disabled:cursor-not-allowed disabled:opacity-50'
+    'inline-flex min-h-[48px] w-full select-none items-center justify-center gap-2 rounded-2xl px-5 font-sans text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-paper disabled:cursor-not-allowed disabled:opacity-50'
   const variants = {
     primary: 'bg-teal text-teal-ink shadow-[0_6px_18px_rgba(78,205,196,.35)] hover:bg-teal-bright',
     secondary: 'bg-sage-100 text-ink hover:bg-sage-200',

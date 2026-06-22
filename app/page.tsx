@@ -4,34 +4,43 @@ import { EmailCapture } from '@/src/ui/landing/EmailCapture'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
 export const metadata: Metadata = {
-  title: 'Prac. — your placement, remembered',
+  title: 'Prac. · your reflections stay with you',
   description:
-    'A free reflective companion for Australian nursing students. Reflect after each shift, map it to your NMBA standards, and build the record your final-year self uses for grad applications — plus hospital and ward guides that take the edge off day one.',
+    'A free reflective companion for Australian nursing students. Reflect after each shift, map it to your NMBA standards, and build the record your final-year self uses for grad applications, plus hospital and ward guides that take the edge off day one.',
 }
 
 const HERO_SUB =
-  'Write your placement reflections in Prac., submit them to your uni’s assessment, and keep everything in one place. By final year, you’ve got a complete portfolio of skills and learning — ready for grad applications, post-grad studies or your own records.'
+  'Write your placement reflections in Prac., submit them to your uni’s assessment, and keep everything in one place. By final year, you’ve got a complete portfolio of skills and learning, ready for grad applications, post-grad studies or your own records.'
 
 const GRAD_BODY =
-  'Every reflection and skill you log compounds into a structured record across all your placements. When grad applications land in final year, you are not staring at a blank page trying to remember first year — it is already there, mapped to the standards, ready to export.'
+  'Every reflection and skill you log compounds into a structured record across all your placements. When grad applications land in final year, you are not staring at a blank page trying to remember first year. It is already there, mapped to the standards, ready to export.'
 
 const STRESS_BODY =
-  'The night before a 7am start shouldn’t be spent dreading the unknown. Prac.’s hospital directory and ward guides cover the practical stuff — where to park, how to get in, what the ward actually feels like, and the skills you’ll likely meet — written by nurses who’ve been there.'
+  'The night before a 7am start shouldn’t be spent dreading the unknown. Prac.’s hospital directory and ward guides cover the practical stuff: where to park, how to get in, what the ward actually feels like, and the skills you’ll likely meet, all written by nurses who’ve been there.'
 
 const STEPS: { n: string; h: string; b: string }[] = [
-  { n: '1', h: 'Reflect', b: 'Three soft prompts. Two minutes, even at 9pm with bad signal — it autosaves as you go.' },
+  { n: '1', h: 'Reflect', b: 'Three soft prompts. Two minutes, even at 9pm with bad signal. It autosaves as you go.' },
   { n: '2', h: 'It maps itself', b: 'Your reflection and the skills you log map to the relevant NMBA standards automatically.' },
-  { n: '3', h: 'It’s yours', b: 'A growing record you can filter and export anytime — across your whole degree.' },
+  { n: '3', h: 'It’s yours', b: 'A growing record you can filter and export anytime, across your whole degree.' },
 ]
 
 export default function LandingPage() {
   return (
     <main className="mx-auto max-w-xl px-5 py-10">
-      {/* ---------- Hero ---------- */}
-      <div className="font-display text-2xl font-semibold tracking-tight">
-        Prac<span className="text-teal">.</span>
-      </div>
+      {/* ---------- Header ---------- */}
+      <header className="flex items-center justify-between">
+        <div className="font-display text-2xl font-semibold tracking-tight">
+          Prac<span className="text-teal">.</span>
+        </div>
+        <Link
+          href="/sign-in"
+          className="select-none rounded-full border border-sage-200 bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-card transition hover:border-sage-300"
+        >
+          Sign in
+        </Link>
+      </header>
 
+      {/* ---------- Hero ---------- */}
       <span className="mt-8 inline-flex items-center gap-2 rounded-full border border-sage-200 bg-sage-50 px-3 py-1.5 text-xs font-medium text-ink">
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[9px] font-bold text-teal-ink">
           RN
@@ -57,7 +66,7 @@ export default function LandingPage() {
             <span className="text-teal">.</span>
           </p>
           <p className="mt-2 rounded-lg bg-sage-50 px-2.5 py-2 text-[11px] leading-snug text-ink-soft">
-            One moment from today — what did you do or see?
+            One moment from today: what did you do or see?
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <Chip>Wound care · New</Chip>
@@ -98,17 +107,23 @@ export default function LandingPage() {
             <p className="font-display text-sm font-semibold">So you’ve got a med-surg placement.</p>
             <p className="mt-1 text-[13px] leading-snug text-ink-soft">
               What the days feel like, the skills you’ll keep meeting, and the moments worth thinking
-              twice about — from a nurse who’s been there.
+              twice about, from a nurse who’s been there.
             </p>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-teal-deep">
-          <Link href="/guides/med-surg" className="hover:text-ink">
-            Peek at a ward guide →
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <Link
+            href="/guides/med-surg"
+            className="inline-flex min-h-[44px] select-none items-center rounded-2xl border border-sage-200 bg-surface px-4 text-sm font-semibold text-ink shadow-card transition hover:border-sage-300"
+          >
+            Peek at a ward guide
           </Link>
-          <Link href="/hospitals" className="hover:text-ink">
-            Browse hospitals →
+          <Link
+            href="/hospitals"
+            className="inline-flex min-h-[44px] select-none items-center rounded-2xl border border-sage-200 bg-surface px-4 text-sm font-semibold text-ink shadow-card transition hover:border-sage-300"
+          >
+            Browse hospitals
           </Link>
         </div>
         <p className="mt-2 text-xs text-ink-faint">No account needed to look around.</p>
@@ -118,7 +133,7 @@ export default function LandingPage() {
       <section className="mt-8">
         <p className="font-mono text-[11px] uppercase tracking-wider text-teal-deep">The long game</p>
         <h2 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight">
-          {'Today’s two minutes — your final-year edge'}
+          {'Today’s two minutes, your final-year edge'}
           <span className="text-teal">.</span>
         </h2>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{GRAD_BODY}</p>
