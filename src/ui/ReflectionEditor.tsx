@@ -13,21 +13,21 @@ import { getSkillLibrary, getAnsatItems } from '@/src/data/skills'
 import { inferStandards } from '@/src/data/mapping'
 import { scanIdentifiers } from '@/src/tagging/identifiers'
 import { newId, todayISO } from '@/src/data/ids'
-import type {
-  AnsatStandard,
-  AnsatItem,
-  SkillLibraryEntry,
-  LoggedSkill,
-} from '@/src/data/types'
+import { TOPICS, type ReflectionTopic } from '@/src/content/topics'
+import { NMBA_PLAIN, skillInContext } from '@/src/content/contexts'
+import type { AnsatStandard, AnsatItem, SkillLibraryEntry, LoggedSkill } from '@/src/data/types'
 import { AppShell } from './AppShell'
 import { Button, Card, Field, Input } from './components'
 
-type Step = 'reflect' | 'skills' | 'review' | 'saved'
+type Step = 'topic' | 'reflect' | 'skills' | 'review' | 'saved'
 
-// The core loop (spec §3): Reflection → Skills → NMBA mapping → Saved.
-// Three soft prompts on one screen, autosave throughout, mapping inferred and
-// confirmed at the end (never selected cold). `mode='skill'` is the standalone
-// "just log a skill" path — it skips the reflection prompts.
+const CUSTOM_MAX = 60
+
+// The core loop (spec §3): Topic → Reflection → Skills → NMBA mapping → Saved.
+// A topic cue swaps the "What happened?" prompt and scopes the skills; skills are
+// filtered to the placement's context; "Now what?" is required; mapping is
+// inferred and confirmed at the end. `mode='skill'` is the standalone
+// "just log a skill" path — it skips the topic + reflection prompts.
 export function ReflectionEditor({
   reflectionId,
   mode = 'full',
@@ -39,11 +39,9 @@ export function ReflectionEditor({
   const { user, loading } = useUser()
 
   const idRef = useRef<string>(reflectionId ?? newId())
-  // Standards we've already auto-applied from inference, so going back to Skills,
-  // adding one, and returning to Review merges the NEW suggestion without
-  // re-adding standards the student deliberately removed.
   const appliedSuggestions = useRef<Set<number>>(new Set())
   const [placementId, setPlacementId] = useState<string | null>(null)
+  const [placementContext, setPlacementContext] = useState<string | null>(null)
   const [standards, setStandards] = useState<AnsatStandard[]>([])
   const [items, setItems] = useState<AnsatItem[]>([])
   const [library, setLibrary] = useState<SkillLibraryEntry[]>([])
@@ -52,7 +50,9 @@ export function ReflectionEditor({
   const [taggingOn, setTaggingOn] = useState(true)
   const [ready, setReady] = useState(false)
 
-  const [step, setStep] = useState<Step>(mode === 'skill' ? 'skills' : 'reflect')
+  const initialStep: Step = mode === 'skill' ? 'skills' : reflectionId ? 'reflect' : 'topic'
+  const [step, setStep] = useState<Step>(initialStep)
+  const [topic, setTopic] = useState<ReflectionTopic | null>(null)
   const [whatHappened, setWhatHappened] = useState('')
   const [soWhat, setSoWhat] = useState('')
   const [nowWhat, setNowWhat] = useState('')
@@ -60,6 +60,8 @@ export function ReflectionEditor({
   const [skills, setSkills] = useState<LoggedSkill[]>([])
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [query, setQuery] = useState('')
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customText, setCustomText] = useState('')
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
   useEffect(() => {
@@ -86,10 +88,9 @@ export function ReflectionEditor({
       // Always resolve to a real placement so a reflection is never dropped.
       const active = await getOrCreateActivePlacement(user.id)
       setPlacementId(active.id)
+      setPlacementContext(active.context ?? null)
 
-      // New/Renewed is auto-set from the student's own history (spec §3) — only
-      // SAVED reflections count, never in-progress drafts (autosave writes a draft
-      // on every keystroke, which would otherwise mislabel a skill as "Renewed").
+      // New/Renewed auto-set from SAVED history only (drafts would mislabel).
       const prior = new Set<string>()
       const all = await db.reflections.where('userId').equals(user.id).toArray()
       for (const r of all) {
@@ -108,8 +109,6 @@ export function ReflectionEditor({
           setReflectedOn(existing.reflectedOn)
           setSkills(existing.skills ?? [])
           setSelected(new Set(existing.standardIds))
-          // Preserve identifier dismissals across edits — otherwise the next
-          // autosave wipes them and the export gate re-flags the same details.
           setDismissedLabels(
             new Set(
               (existing.identifierFlags ?? [])
@@ -129,8 +128,6 @@ export function ReflectionEditor({
     [whatHappened, soWhat, nowWhat]
   )
   const flags = useMemo(() => scanIdentifiers(text), [text])
-  // Re-apply any prior dismissals so they survive autosave (the gate's decisions
-  // are sticky); the writing-time nudge only shows still-open flags.
   const flagsToSave = useMemo(
     () =>
       flags.map((f) =>
@@ -140,15 +137,8 @@ export function ReflectionEditor({
   )
   const openFlags = useMemo(() => flagsToSave.filter((f) => f.status === 'open'), [flagsToSave])
   const suggested = useMemo(() => inferStandards(skills, text), [skills, text])
-  // Item-level codes (e.g. "4.2") from the logged skills, persisted so the
-  // 23-item granularity survives a sync / device switch (matched to each standard
-  // at push time). Auditable: answers "why Standard 4?".
-  const reflectionItemCodes = useMemo(
-    () => [...new Set(skills.flatMap((s) => s.itemCodes))],
-    [skills]
-  )
+  const reflectionItemCodes = useMemo(() => [...new Set(skills.flatMap((s) => s.itemCodes))], [skills])
 
-  const stdById = useMemo(() => new Map(standards.map((s) => [s.id, s])), [standards])
   const itemByCode = useMemo(() => new Map(items.map((i) => [i.code, i])), [items])
   const itemForStd = useMemo(() => {
     const m = new Map<number, string>()
@@ -204,35 +194,58 @@ export function ReflectionEditor({
     const q = query.trim().toLowerCase()
     if (!q) return []
     return library
-      .filter((s) => s.name.toLowerCase().includes(q) && !skills.some((x) => x.skillId === s.id))
-      .slice(0, 5)
-  }, [query, library, skills])
+      .filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) &&
+          skillInContext(s.contexts, placementContext) &&
+          !skills.some((x) => x.skillId === s.id)
+      )
+      .slice(0, 8)
+  }, [query, library, placementContext, skills])
+
+  // Topic-scoped suggestions (full reflection only), filtered to the placement context.
+  const suggestedSkills = useMemo(() => {
+    if (!topic) return []
+    return library
+      .filter(
+        (s) =>
+          skillInContext(s.contexts, placementContext) &&
+          (topic.skillStandards.length === 0 ||
+            s.standardIds.some((x) => topic.skillStandards.includes(x))) &&
+          !skills.some((x) => x.skillId === s.id)
+      )
+      .slice(0, 12)
+  }, [topic, library, placementContext, skills])
+
+  function selectTopic(t: ReflectionTopic) {
+    setTopic(t)
+    if (taggingOn) {
+      setSelected(new Set(t.standards))
+      appliedSuggestions.current = new Set(t.standards)
+    }
+    setStep('reflect')
+  }
 
   function addSkill(entry: SkillLibraryEntry) {
     const status = priorSkillIds.has(entry.id) ? 'renewed' : 'new'
     setSkills((prev) => [
       ...prev,
-      {
-        id: newId(),
-        skillId: entry.id,
-        name: entry.name,
-        status,
-        standardIds: entry.standardIds,
-        itemCodes: entry.itemCodes,
-      },
+      { id: newId(), skillId: entry.id, name: entry.name, status, standardIds: entry.standardIds, itemCodes: entry.itemCodes },
     ])
     setQuery('')
   }
 
-  function addFreeText() {
-    const t = query.trim()
+  function addCustom(name: string, standardId: number) {
+    const t = name.trim().slice(0, CUSTOM_MAX)
     if (!t) return
-    // Free text is allowed but quarantined: name shown, but it carries no library
-    // mapping and is queued for normalisation server-side (spec §3).
+    // Custom task (spec): student-authored, mapped to a chosen standard, flagged
+    // custom so it can be reviewed and promoted to the master list later.
     setSkills((prev) => [
       ...prev,
-      { id: newId(), rawText: t, name: t, status: 'new', standardIds: [], itemCodes: [] },
+      { id: newId(), rawText: t, name: t, status: 'new', standardIds: [standardId], itemCodes: [], custom: true },
     ])
+    setCustomText('')
+    setCustomOpen(false)
     setQuery('')
   }
 
@@ -256,8 +269,6 @@ export function ReflectionEditor({
   }
 
   function goReview() {
-    // Merge any newly-inferred standards (e.g. after adding a skill), unless the
-    // student turned tag suggestions off. Never re-adds ones they removed.
     if (taggingOn) {
       setSelected((prev) => {
         const next = new Set(prev)
@@ -275,8 +286,6 @@ export function ReflectionEditor({
 
   async function finish() {
     if (!user) return
-    // Guarantee a placement before we ever show "Saved" — never affirm a save
-    // that didn't happen.
     const pid = placementId ?? (await getOrCreateActivePlacement(user.id)).id
     if (!placementId) setPlacementId(pid)
     await saveReflection({
@@ -296,8 +305,14 @@ export function ReflectionEditor({
     setStep('saved')
   }
 
-  const stepList: Step[] = mode === 'skill' ? ['skills', 'review'] : ['reflect', 'skills', 'review']
+  const stepList: Step[] =
+    mode === 'skill'
+      ? ['skills', 'review']
+      : reflectionId
+        ? ['reflect', 'skills', 'review']
+        : ['topic', 'reflect', 'skills', 'review']
   const stepIndex = stepList.indexOf(step)
+  const reflectReady = whatHappened.trim().length >= 3 && nowWhat.trim().length >= 3
 
   if (loading || !user || !ready) {
     return (
@@ -333,6 +348,37 @@ export function ReflectionEditor({
           </div>
         )}
 
+        {/* ---------------- TOPIC ---------------- */}
+        {step === 'topic' && (
+          <div className="space-y-5">
+            <div>
+              <h1 className="font-display text-2xl font-semibold tracking-tight">
+                What kind of moment<span className="text-teal">?</span>
+              </h1>
+              <p className="mt-1 text-sm text-ink-soft">
+                Pick the closest — it just sets the right cue. No wrong answer.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              {TOPICS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => selectTopic(t)}
+                  className="flex w-full items-center gap-3.5 rounded-card border border-sage-200 bg-surface p-3.5 text-left shadow-card transition hover:-translate-y-px hover:border-sage-300"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-lg" aria-hidden>
+                    {t.emoji}
+                  </span>
+                  <span className="flex-1 text-[15px] font-medium leading-snug">{t.label}</span>
+                  <span className="text-sage-300" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ---------------- REFLECT ---------------- */}
         {step === 'reflect' && (
           <div className="space-y-5">
@@ -341,7 +387,7 @@ export function ReflectionEditor({
             </h1>
             <Prompt
               label="What happened?"
-              placeholder="One moment from today — what did you do or see?"
+              placeholder={topic?.placeholder ?? 'One moment from today — what did you do or see?'}
               value={whatHappened}
               onChange={setWhatHappened}
               autoFocus
@@ -355,7 +401,7 @@ export function ReflectionEditor({
             />
             <Prompt
               label="Now what?"
-              optional="optional"
+              required
               placeholder="What will you do differently next shift?"
               value={nowWhat}
               onChange={setNowWhat}
@@ -385,85 +431,134 @@ export function ReflectionEditor({
               />
             </Field>
 
-            <Button onClick={() => setStep('skills')} disabled={whatHappened.trim().length < 3}>
-              Next: add skills →
-            </Button>
+            <div>
+              <Button onClick={() => setStep('skills')} disabled={!reflectReady}>
+                Next: add skills →
+              </Button>
+              {!reflectReady && (
+                <p className="mt-2 text-center text-xs text-ink-faint">
+                  &ldquo;What happened?&rdquo; and &ldquo;Now what?&rdquo; are needed to continue.
+                </p>
+              )}
+            </div>
+            {mode === 'full' && !reflectionId && (
+              <Button variant="ghost" onClick={() => setStep('topic')}>
+                ← Back
+              </Button>
+            )}
           </div>
         )}
 
         {/* ---------------- SKILLS ---------------- */}
         {step === 'skills' && (
           <div className="space-y-5">
-            <h1 className="font-display text-2xl font-semibold tracking-tight">
-              What did you do<span className="text-teal">?</span>
-            </h1>
-            <div className="space-y-2">
-              <Input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search skills — e.g. wound care"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (results[0]) addSkill(results[0])
-                    else addFreeText()
-                  }
-                }}
-              />
-              {query.trim() && (
-                <Card className="space-y-1 p-1.5">
-                  {results.map((s) => (
+            <div>
+              <h1 className="font-display text-2xl font-semibold tracking-tight">
+                What did you do<span className="text-teal">?</span>
+              </h1>
+              {placementContext && (
+                <p className="mt-1 text-sm text-ink-soft">
+                  Showing skills common on {placementContext}.
+                </p>
+              )}
+            </div>
+
+            <Input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search skills — e.g. wound care"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && results[0]) addSkill(results[0])
+              }}
+            />
+
+            {/* Search results */}
+            {query.trim() && (
+              <Card className="space-y-1 p-1.5">
+                {results.map((s) => (
+                  <SkillRow key={s.id} name={s.name} standards={s.standardIds} onClick={() => addSkill(s)} />
+                ))}
+                {results.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-ink-faint">No match in this placement&rsquo;s list.</p>
+                )}
+                <button
+                  onClick={() => {
+                    setCustomText(query.trim())
+                    setCustomOpen(true)
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
+                >
+                  <span className="text-ink-faint" aria-hidden>
+                    ✎
+                  </span>
+                  <span className="flex-1">
+                    Can&rsquo;t find it? Add &ldquo;{query.trim()}&rdquo; as your own
+                  </span>
+                </button>
+              </Card>
+            )}
+
+            {/* Topic-scoped suggestions when not searching */}
+            {!query.trim() && suggestedSkills.length > 0 && (
+              <div className="space-y-2">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Suggested</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedSkills.map((s) => (
                     <button
                       key={s.id}
                       onClick={() => addSkill(s)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium hover:border-sage-300"
                     >
                       <span className="text-teal-deep" aria-hidden>
                         ＋
                       </span>
-                      <span className="flex-1">{s.name}</span>
-                      {s.standardIds[0] && (
-                        <span className="font-mono text-[10px] text-ink-faint">
-                          Std {s.standardIds.join(', ')}
-                        </span>
-                      )}
+                      {s.name}
                     </button>
                   ))}
-                  <button
-                    onClick={addFreeText}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
-                  >
-                    <span className="text-ink-faint" aria-hidden>
-                      ✎
-                    </span>
-                    <span className="flex-1">
-                      Add &ldquo;{query.trim()}&rdquo; as free text
-                      <span className="block font-mono text-[10px] text-ink-faint">
-                        we&rsquo;ll match it to the library later
-                      </span>
-                    </span>
-                  </button>
-                </Card>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
 
+            {/* Add-your-own entry + custom panel */}
+            {!query.trim() && !customOpen && (
+              <button
+                onClick={() => {
+                  setCustomText('')
+                  setCustomOpen(true)
+                }}
+                className="text-sm font-medium text-teal-deep hover:text-ink"
+              >
+                Can&rsquo;t find it? Add your own →
+              </button>
+            )}
+            {customOpen && (
+              <CustomPanel
+                value={customText}
+                onChange={setCustomText}
+                onCancel={() => {
+                  setCustomOpen(false)
+                  setCustomText('')
+                }}
+                onPick={(stdId) => addCustom(customText, stdId)}
+              />
+            )}
+
+            {/* Added skills */}
             <div className="space-y-2">
               {skills.map((s) => (
                 <Card key={s.id} className="flex items-center gap-3 p-3">
                   <span className="flex-1 text-sm font-medium leading-tight">
                     {s.name}
-                    {s.standardIds[0] && (
-                      <span className="mt-0.5 block font-mono text-[10px] font-normal text-ink-faint">
-                        Std {s.standardIds.join(', ')}
-                      </span>
-                    )}
+                    <span className="mt-0.5 block font-mono text-[10px] font-normal text-ink-faint">
+                      {s.custom ? 'Your own · ' : ''}
+                      {s.standardIds[0] ? `Std ${s.standardIds.join(', ')}` : 'unmapped'}
+                    </span>
                   </span>
                   <button
                     onClick={() => toggleStatus(s.id)}
                     className={`min-h-[36px] rounded-lg px-2.5 text-xs font-semibold ${
-                      s.status === 'new'
-                        ? 'bg-new text-teal-deep'
-                        : 'bg-renew-bg text-renew'
+                      s.status === 'new' ? 'bg-new text-teal-deep' : 'bg-renew-bg text-renew'
                     }`}
                     title="Auto-set from your history — tap to change"
                   >
@@ -480,8 +575,8 @@ export function ReflectionEditor({
               ))}
               {skills.length === 0 && (
                 <p className="text-sm text-ink-faint">
-                  Search and tap to add the skills this shift surfaced. New vs Renewed is set
-                  from your history.
+                  Search or tap a suggestion to add the skills this shift surfaced. New vs Renewed is
+                  set from your history.
                 </p>
               )}
             </div>
@@ -506,9 +601,7 @@ export function ReflectionEditor({
 
             {whatHappened.trim() && (
               <Card>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">
-                  Reflection
-                </p>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Reflection</p>
                 <p className="mt-1.5 line-clamp-2 text-sm text-ink-soft">{whatHappened}</p>
               </Card>
             )}
@@ -541,9 +634,7 @@ export function ReflectionEditor({
             <Card>
               <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-ink-faint">
                 Maps to NMBA standards
-                <span className="rounded bg-new px-1.5 py-0.5 text-[9px] text-teal-deep">
-                  auto-suggested
-                </span>
+                <span className="rounded bg-new px-1.5 py-0.5 text-[9px] text-teal-deep">auto-suggested</span>
               </p>
               <div className="mt-3 space-y-2">
                 {standards.map((s) => {
@@ -559,9 +650,7 @@ export function ReflectionEditor({
                       }`}
                       aria-pressed={on}
                     >
-                      <span className="w-6 font-mono text-sm font-medium text-teal-deep">
-                        {s.ordinal}
-                      </span>
+                      <span className="w-6 font-mono text-sm font-medium text-teal-deep">{s.ordinal}</span>
                       <span className="flex-1">
                         <span className="block text-sm font-semibold leading-tight">{s.title}</span>
                         {item && (
@@ -630,9 +719,80 @@ export function ReflectionEditor({
   )
 }
 
+function SkillRow({ name, standards, onClick }: { name: string; standards: number[]; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
+    >
+      <span className="text-teal-deep" aria-hidden>
+        ＋
+      </span>
+      <span className="flex-1">{name}</span>
+      {standards[0] && <span className="font-mono text-[10px] text-ink-faint">Std {standards.join(', ')}</span>}
+    </button>
+  )
+}
+
+function CustomPanel({
+  value,
+  onChange,
+  onCancel,
+  onPick,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onCancel: () => void
+  onPick: (standardId: number) => void
+}) {
+  const ready = value.trim().length > 0
+  return (
+    <Card className="space-y-3 border-teal/40">
+      <div className="space-y-1.5">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-semibold">Add your own task</span>
+          <span className="font-mono text-[10px] text-ink-faint">
+            {value.length}/{CUSTOM_MAX}
+          </span>
+        </div>
+        <Input
+          autoFocus
+          value={value}
+          maxLength={CUSTOM_MAX}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="e.g. Bladder scan"
+        />
+      </div>
+      <div>
+        <p className="mb-2 text-xs text-ink-soft">Which standard does it fit?</p>
+        <div className="flex flex-wrap gap-1.5">
+          {NMBA_PLAIN.map((s) => (
+            <button
+              key={s.id}
+              disabled={!ready}
+              onClick={() => onPick(s.id)}
+              className={`min-h-[36px] rounded-lg border px-2.5 text-xs font-medium transition ${
+                ready
+                  ? 'border-line bg-surface hover:border-teal hover:bg-new'
+                  : 'border-line bg-surface text-ink-faint opacity-50'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button onClick={onCancel} className="text-xs font-medium text-ink-faint hover:text-ink">
+        Cancel
+      </button>
+    </Card>
+  )
+}
+
 function Prompt({
   label,
   optional,
+  required,
   placeholder,
   value,
   onChange,
@@ -640,6 +800,7 @@ function Prompt({
 }: {
   label: string
   optional?: string
+  required?: boolean
   placeholder: string
   value: string
   onChange: (v: string) => void
@@ -654,6 +815,11 @@ function Prompt({
         {optional && (
           <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-ink-faint">
             {optional}
+          </span>
+        )}
+        {required && (
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-teal-deep">
+            needed
           </span>
         )}
       </div>

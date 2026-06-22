@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 // Bottom tab bar (spec: [Home] [Reflect] [Resources] [Profile]). Extracted from
 // AppShell so it also persists on the PUBLIC hospital/guide pages (which live
@@ -36,8 +37,24 @@ const TABS: Array<{
   },
 ]
 
+const SEEN_HOSPITALS_KEY = 'prac.seenHospitals'
+
 export function BottomNav() {
   const pathname = usePathname()
+  // Temporary "New" dot drawing the eye to the Hospital Directory (it lives under
+  // Resources). Self-clears once the student has visited /hospitals — so it's a
+  // genuine first-discovery nudge, not permanent chrome. Remove with the Home card.
+  const [showHospitalsBadge, setShowHospitalsBadge] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (pathname.startsWith('/hospitals')) {
+      localStorage.setItem(SEEN_HOSPITALS_KEY, '1')
+      setShowHospitalsBadge(false)
+      return
+    }
+    setShowHospitalsBadge(localStorage.getItem(SEEN_HOSPITALS_KEY) !== '1')
+  }, [pathname])
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper/95 backdrop-blur"
@@ -55,7 +72,15 @@ export function BottomNav() {
                 active ? 'text-teal-deep' : 'text-ink-faint hover:text-ink'
               }`}
             >
-              <tab.Icon active={active} />
+              <span className="relative">
+                <tab.Icon active={active} />
+                {tab.href === '/resources' && showHospitalsBadge && (
+                  <span
+                    className="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-teal ring-2 ring-paper"
+                    aria-label="New"
+                  />
+                )}
+              </span>
               {tab.label}
             </Link>
           )

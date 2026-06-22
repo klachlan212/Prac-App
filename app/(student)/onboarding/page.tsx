@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
-import { WARD_TO_GUIDE } from '@/src/content/guides'
+import { PLACEMENT_CONTEXTS, CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { Button, Card } from '@/src/ui/components'
 
 // First-run setup (spec §2). Tap-select only — the one text field (email) was
@@ -23,16 +23,7 @@ const YEARS: Array<{ label: string; level?: number }> = [
   { label: 'Final year', level: 4 },
   { label: 'Postgrad / accelerated' },
 ]
-const SPECIALTIES = [
-  'Med-surg',
-  'Aged care',
-  'Mental health',
-  'Emergency',
-  'Paediatrics',
-  'Community',
-  'Not sure yet',
-  'None of these',
-]
+const SPECIALTIES = [...PLACEMENT_CONTEXTS, 'Not sure yet']
 const PROGRESS: Record<Step, number> = {
   welcome: 8,
   context: 30,
@@ -84,15 +75,13 @@ export default function OnboardingPage() {
         reminderDay: 0,
         taggingOn: true,
       })
-      const ward =
-        specialty && specialty !== 'Not sure yet' && specialty !== 'None of these'
-          ? specialty
-          : undefined
+      const placementContext =
+        specialty && specialty !== 'Not sure yet' ? specialty : undefined
       // "Just looking around" is an orientation path — don't create a placeholder
       // placement (it would be an empty, misleading record). One is created lazily
       // if/when they actually log a shift.
       if (context !== 'exploring') {
-        await createPlacement(user.id, { ward })
+        await createPlacement(user.id, { context: placementContext })
       }
 
       setStep('success')
@@ -105,7 +94,7 @@ export default function OnboardingPage() {
 
   if (loading || !user) return null
 
-  const guideSlug = specialty ? WARD_TO_GUIDE[specialty] : undefined
+  const guideSlug = specialty ? CONTEXT_TO_GUIDE[specialty] : undefined
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-8">

@@ -13,6 +13,7 @@ import type { Placement } from '@/src/data/types'
 import { todayISO } from '@/src/data/ids'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card, Field, Input } from '@/src/ui/components'
+import { PLACEMENT_CONTEXTS } from '@/src/content/contexts'
 
 // Edit the current placement's details, or move on to a new placement (which
 // archives the current one — its reflections stay saved as a separate record).
@@ -22,6 +23,7 @@ export default function PlacementPage() {
   const [ready, setReady] = useState(false)
   const [placement, setPlacement] = useState<Placement | null>(null)
 
+  const [context, setContext] = useState<string | null>(null)
   const [ward, setWard] = useState('')
   const [hospital, setHospital] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -45,6 +47,7 @@ export default function PlacementPage() {
       const p = (await getActivePlacement(user.id)) ?? null
       setPlacement(p)
       if (p) {
+        setContext(p.context ?? null)
         setWard(p.ward ?? '')
         setHospital(p.hospital ?? '')
         setStartDate(p.startDate ?? '')
@@ -56,6 +59,7 @@ export default function PlacementPage() {
 
   function fields() {
     return {
+      context: context ?? undefined,
       ward: ward.trim() || undefined,
       hospital: hospital.trim() || undefined,
       startDate: startDate || undefined,
@@ -114,6 +118,41 @@ export default function PlacementPage() {
         </div>
 
         <Card className="space-y-4">
+          <div>
+            <p className="text-sm font-medium">Placement type</p>
+            <p className="mb-2 mt-0.5 text-xs text-ink-soft">
+              Tailors which skills you see when you reflect.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {PLACEMENT_CONTEXTS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={context === c}
+                  onClick={() => setContext(c)}
+                  className={`min-h-[44px] rounded-2xl border px-3.5 text-sm font-medium transition ${
+                    context === c
+                      ? 'border-teal bg-teal text-teal-ink'
+                      : 'border-sage-200 bg-surface text-ink hover:border-sage-300'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+              <button
+                type="button"
+                aria-pressed={context === null}
+                onClick={() => setContext(null)}
+                className={`min-h-[44px] rounded-2xl border px-3.5 text-sm font-medium transition ${
+                  context === null
+                    ? 'border-teal bg-teal text-teal-ink'
+                    : 'border-sage-200 bg-surface text-ink hover:border-sage-300'
+                }`}
+              >
+                Not sure / general
+              </button>
+            </div>
+          </div>
           <Field label="Ward / unit" htmlFor="ward">
             <Input
               id="ward"

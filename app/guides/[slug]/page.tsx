@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getGuide, GUIDES } from '@/src/content/guides'
 import { BottomNav } from '@/src/ui/BottomNav'
+import { SiteFooter } from '@/src/ui/SiteFooter'
 
 // Public, ungated funnel page (spec §6) — outside the auth group on purpose so it
 // catches search / shared links. Conversion sits AFTER the value, framed as
@@ -156,6 +157,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           The guide stays free either way. No spam — leave any time.
         </p>
       </section>
+      <SiteFooter />
       <BottomNav />
     </main>
   )

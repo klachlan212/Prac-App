@@ -8,6 +8,7 @@ import { flush } from '@/src/sync/engine'
 export interface PlacementInput {
   ward?: string
   hospital?: string
+  context?: string
   startDate?: string
   endDate?: string
 }
@@ -22,6 +23,7 @@ export async function createPlacement(
     userId,
     ward: input.ward,
     hospital: input.hospital,
+    context: input.context,
     startDate: input.startDate,
     endDate: input.endDate,
     status: 'active',

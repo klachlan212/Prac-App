@@ -6,6 +6,7 @@ import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
 import { Button, Card } from '@/src/ui/components'
 import { HospitalAdmin } from '@/src/ui/hospital/HospitalAdmin'
+import { NMBA_PLAIN } from '@/src/content/contexts'
 
 // Moderator-only admin area: the hospital-directory moderation queues + the
 // hospital editor. Gated client-side for UX; the real boundary is RLS
@@ -27,6 +28,12 @@ interface PendingRequest {
   created_at: string
 }
 
+interface CustomTask {
+  name: string
+  nmba_standard: number | null
+  uses: number | string
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const { user, loading } = useUser()
@@ -35,6 +42,7 @@ export default function AdminPage() {
   const [isModerator, setIsModerator] = useState(false)
   const [pending, setPending] = useState<PendingTip[]>([])
   const [requests, setRequests] = useState<PendingRequest[]>([])
+  const [customTasks, setCustomTasks] = useState<CustomTask[]>([])
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -81,6 +89,13 @@ export default function AdminPage() {
     setRequests((data as PendingRequest[]) ?? [])
   }, [])
 
+  // Custom-task report (moderator-only, aggregate via get_custom_tasks RPC).
+  const loadCustomTasks = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase.rpc('get_custom_tasks')
+    setCustomTasks((data as CustomTask[]) ?? [])
+  }, [])
+
   useEffect(() => {
     if (!user) return
     const supabase = createClient()
@@ -95,10 +110,11 @@ export default function AdminPage() {
       if (mod) {
         await loadPending()
         await loadRequests()
+        await loadCustomTasks()
       }
       setReady(true)
     })()
-  }, [user, loadPending, loadRequests])
+  }, [user, loadPending, loadRequests, loadCustomTasks])
 
   async function triageRequest(id: string, status: 'reviewed' | 'dismissed') {
     const supabase = createClient()
@@ -213,6 +229,42 @@ export default function AdminPage() {
                       </div>
                     </Card>
                   ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2 className="mb-2 font-medium">Custom tasks</h2>
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                Student-authored tasks (couldn’t find it in the list), with the standard chosen and
+                how often logged. Promote frequent ones to the master taxonomy.
+              </p>
+              {customTasks.length === 0 ? (
+                <Card>
+                  <p className="text-sm text-slate-500">No custom tasks logged yet.</p>
+                </Card>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-900">
+                      <tr>
+                        <th className="px-3 py-2">Task</th>
+                        <th className="px-3 py-2">Standard</th>
+                        <th className="px-3 py-2">Uses</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customTasks.map((t, i) => (
+                        <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
+                          <td className="px-3 py-2">{t.name}</td>
+                          <td className="px-3 py-2">
+                            {NMBA_PLAIN.find((s) => s.id === t.nmba_standard)?.label ?? '—'}
+                          </td>
+                          <td className="px-3 py-2">{t.uses}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

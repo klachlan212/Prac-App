@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { HospitalsDirectory } from '@/src/ui/hospital/HospitalsDirectory'
 import { BottomNav } from '@/src/ui/BottomNav'
+import { SiteFooter } from '@/src/ui/SiteFooter'
 
 // Public, ungated directory — practical placement logistics, hospital by hospital.
 // Like the ward guides, it lives outside the auth group so it catches search and
@@ -43,6 +44,7 @@ export default function HospitalsPage() {
         Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
         change: always read the signage and check with your facilitator.
       </p>
+      <SiteFooter />
       <BottomNav />
     </main>
   )

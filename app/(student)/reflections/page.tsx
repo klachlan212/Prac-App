@@ -12,7 +12,7 @@ import { softDeleteReflection, restoreReflection } from '@/src/data/reflections'
 import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
-import { WARD_TO_GUIDE } from '@/src/content/guides'
+import { CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { todayISO } from '@/src/data/ids'
 
 // ISO week key (year + week number) for the gentle weekly streak.
@@ -210,12 +210,40 @@ export default function ReflectionsPage() {
           </Link>
         </div>
 
-        {placement?.ward && WARD_TO_GUIDE[placement.ward] && (
-          <Link href={`/guides/${WARD_TO_GUIDE[placement.ward]}`}>
+        {/* Temporary spotlight for the Hospital Directory (lives a level down under
+            Resources). Surfaced on Home so it's discoverable; remove once it has a
+            permanent home in nav. */}
+        <Link href="/hospitals" className="block">
+          <Card className="flex items-center gap-3 border-teal/40 transition hover:border-teal">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-new text-lg"
+              aria-hidden
+            >
+              🏥
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <b className="text-sm font-semibold">Hospital tips</b>
+                <span className="rounded-full bg-teal px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-teal-ink">
+                  New
+                </span>
+              </span>
+              <span className="mt-0.5 block text-xs text-ink-soft">
+                Parking, access, food &amp; culture — from real students.
+              </span>
+            </span>
+            <span className="shrink-0 text-sage-300" aria-hidden>
+              ›
+            </span>
+          </Card>
+        </Link>
+
+        {placement?.context && CONTEXT_TO_GUIDE[placement.context] && (
+          <Link href={`/guides/${CONTEXT_TO_GUIDE[placement.context]}`}>
             <Card className="flex items-center gap-3 border-sage-200 bg-sage-50">
               <span aria-hidden>🏥</span>
               <span className="flex-1 text-sm">
-                <b className="font-semibold">{placement.ward} prep guide</b>
+                <b className="font-semibold">{placement.context} prep guide</b>
                 <span className="text-ink-soft"> — likely skills &amp; prompts</span>
               </span>
               <span className="text-sage-300" aria-hidden>
