@@ -7,6 +7,7 @@ import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
 import { getProfile, updateProfile } from '@/src/data/profile'
 import { AppShell } from '@/src/ui/AppShell'
+import { ChevronRight } from 'lucide-react'
 import { Button, Card, Field, Input } from '@/src/ui/components'
 
 const YEARS: Array<{ label: string; level?: number }> = [
@@ -143,9 +144,7 @@ export default function ProfilePage() {
                 Every reflection, filterable by standard, skill type and recency.
               </span>
             </span>
-            <span className="text-sage-300" aria-hidden>
-              ›
-            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
           </Card>
         </Link>
 
@@ -160,9 +159,7 @@ export default function ProfilePage() {
                 Turn your record into a document you keep.
               </span>
             </span>
-            <span className="text-sage-300" aria-hidden>
-              ›
-            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
           </Card>
         </Link>
 
@@ -177,9 +174,7 @@ export default function ProfilePage() {
                 Reminders, tag suggestions, account.
               </span>
             </span>
-            <span className="text-sage-300" aria-hidden>
-              ›
-            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
           </Card>
         </Link>
 

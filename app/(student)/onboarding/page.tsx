@@ -6,6 +6,7 @@ import { useUser } from '@/src/auth/useUser'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
 import { PLACEMENT_CONTEXTS, CONTEXT_TO_GUIDE } from '@/src/content/contexts'
+import { Check, ChevronRight } from 'lucide-react'
 import { Button, Card, Input } from '@/src/ui/components'
 
 // First-run setup (spec §2). Tap-select only — the one text field (email) was
@@ -264,8 +265,8 @@ export default function OnboardingPage() {
 
         {step === 'success' && (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal text-3xl text-teal-ink shadow-[0_12px_36px_rgba(78,205,196,.4)]">
-              ✓
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal text-teal-ink shadow-[0_12px_36px_rgba(78,205,196,.4)]">
+              <Check className="h-10 w-10" strokeWidth={2.5} aria-hidden />
             </div>
             <h1 className="mt-6 font-display text-2xl font-semibold tracking-tight">
               {context === 'exploring' ? 'You’re in' : 'You’re set up'}
@@ -299,9 +300,7 @@ export default function OnboardingPage() {
                     <span className="flex-1 text-sm font-medium">
                       Start with the {specialty} ward guide
                     </span>
-                    <span className="text-sage-300" aria-hidden>
-                      ›
-                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
                   </button>
                 )}
                 <div className="mt-8 w-full">
@@ -403,9 +402,7 @@ function Choice({
         <span className="block text-[15px] font-semibold">{title}</span>
         <span className="block text-[13px] text-ink-soft">{sub}</span>
       </span>
-      <span className="text-sage-300" aria-hidden>
-        ›
-      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
     </button>
   )
 }

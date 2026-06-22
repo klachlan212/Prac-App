@@ -16,6 +16,7 @@ import { newId, todayISO } from '@/src/data/ids'
 import { TOPICS, type ReflectionTopic } from '@/src/content/topics'
 import { NMBA_PLAIN, skillInContext } from '@/src/content/contexts'
 import type { AnsatStandard, AnsatItem, SkillLibraryEntry, LoggedSkill } from '@/src/data/types'
+import { Plus, Check, X, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
 import { AppShell } from './AppShell'
 import { Button, Card, Field, Input } from './components'
 
@@ -370,9 +371,7 @@ export function ReflectionEditor({
                     {t.emoji}
                   </span>
                   <span className="flex-1 text-[15px] font-medium leading-snug">{t.label}</span>
-                  <span className="text-sage-300" aria-hidden>
-                    ›
-                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
                 </button>
               ))}
             </div>
@@ -433,7 +432,7 @@ export function ReflectionEditor({
 
             <div>
               <Button onClick={() => setStep('skills')} disabled={!reflectReady}>
-                Next: add skills →
+                Next: add skills
               </Button>
               {!reflectReady && (
                 <p className="mt-2 text-center text-xs text-ink-faint">
@@ -443,7 +442,8 @@ export function ReflectionEditor({
             </div>
             {mode === 'full' && !reflectionId && (
               <Button variant="ghost" onClick={() => setStep('topic')}>
-                ← Back
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back
               </Button>
             )}
           </div>
@@ -510,9 +510,7 @@ export function ReflectionEditor({
                       onClick={() => addSkill(s)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-medium hover:border-sage-300"
                     >
-                      <span className="text-teal-deep" aria-hidden>
-                        ＋
-                      </span>
+                      <Plus className="h-3.5 w-3.5 text-teal-deep" aria-hidden />
                       {s.name}
                     </button>
                   ))}
@@ -529,7 +527,7 @@ export function ReflectionEditor({
                 }}
                 className="text-sm font-medium text-teal-deep hover:text-ink"
               >
-                Can&rsquo;t find it? Add your own →
+                Can&rsquo;t find it? Add your own
               </button>
             )}
             {customOpen && (
@@ -562,14 +560,15 @@ export function ReflectionEditor({
                     }`}
                     title="Auto-set from your history — tap to change"
                   >
-                    {s.status === 'new' ? 'New' : 'Renewed'} ▾
+                    {s.status === 'new' ? 'New' : 'Renewed'}
+                    <ChevronDown className="ml-0.5 inline h-3.5 w-3.5" aria-hidden />
                   </button>
                   <button
                     onClick={() => removeSkill(s.id)}
-                    className="min-h-[36px] px-1 text-lg text-ink-faint hover:text-ink"
+                    className="flex min-h-[36px] items-center px-1 text-ink-faint hover:text-ink"
                     aria-label="Remove skill"
                   >
-                    ×
+                    <X className="h-4 w-4" aria-hidden />
                   </button>
                 </Card>
               ))}
@@ -582,11 +581,12 @@ export function ReflectionEditor({
             </div>
 
             <Button onClick={goReview} disabled={skills.length === 0}>
-              Next: confirm mapping →
+              Next: confirm mapping
             </Button>
             {mode === 'full' && (
               <Button variant="ghost" onClick={() => setStep('reflect')}>
-                ← Back to reflection
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back to reflection
               </Button>
             )}
           </div>
@@ -665,7 +665,7 @@ export function ReflectionEditor({
                         }`}
                         aria-hidden
                       >
-                        ✓
+                        <Check className="h-4 w-4" aria-hidden />
                       </span>
                     </button>
                   )
@@ -677,7 +677,8 @@ export function ReflectionEditor({
               Save reflection<span aria-hidden>.</span>
             </Button>
             <Button variant="ghost" onClick={() => setStep('skills')}>
-              ← Back to skills
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Back to skills
             </Button>
           </div>
         )}
@@ -685,8 +686,8 @@ export function ReflectionEditor({
         {/* ---------------- SAVED ---------------- */}
         {step === 'saved' && (
           <div className="flex flex-col items-center py-6 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal text-2xl font-bold text-teal-ink">
-              ✓
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal text-teal-ink">
+              <Check className="h-8 w-8" strokeWidth={2.5} aria-hidden />
             </div>
             <h2 className="mt-5 font-display text-2xl font-semibold tracking-tight">
               Saved<span className="text-teal">.</span>
@@ -725,9 +726,7 @@ function SkillRow({ name, standards, onClick }: { name: string; standards: numbe
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
     >
-      <span className="text-teal-deep" aria-hidden>
-        ＋
-      </span>
+      <Plus className="h-3.5 w-3.5 shrink-0 text-teal-deep" aria-hidden />
       <span className="flex-1">{name}</span>
       {standards[0] && <span className="font-mono text-[10px] text-ink-faint">Std {standards.join(', ')}</span>}
     </button>

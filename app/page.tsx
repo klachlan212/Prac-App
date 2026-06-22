@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { EmailCapture } from '@/src/ui/landing/EmailCapture'
+import { Download } from 'lucide-react'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
 export const metadata: Metadata = {
@@ -146,7 +147,8 @@ export default function LandingPage() {
             <Stat n="50+" label="skills" />
           </div>
           <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-new px-2.5 py-1 text-xs font-semibold text-teal-deep">
-            ⤓ Export for grad applications
+            <Download className="h-3.5 w-3.5" aria-hidden />
+            Export for grad applications
           </div>
         </div>
       </section>

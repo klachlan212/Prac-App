@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
 import { getProfile } from '@/src/data/profile'
 import { AppShell } from '@/src/ui/AppShell'
+import { ChevronRight } from 'lucide-react'
 import { Card } from '@/src/ui/components'
 
 // Resources hub (spec tab bar). A hub so new categories scale without new tabs.
@@ -58,12 +59,10 @@ export default function ResourcesPage() {
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Hospitals</span>
               <span className="block text-xs text-ink-soft">
-                Parking, access, food and culture — by hospital.
+                Parking, access, food and culture, by hospital.
               </span>
             </span>
-            <span className="text-sage-300" aria-hidden>
-              ›
-            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
           </Card>
         </Link>
 

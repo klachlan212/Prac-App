@@ -11,6 +11,7 @@ import { getActivePlacement } from '@/src/data/placements'
 import { softDeleteReflection, restoreReflection } from '@/src/data/reflections'
 import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
+import { ChevronRight } from 'lucide-react'
 import { Button, Card } from '@/src/ui/components'
 import { CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { todayISO } from '@/src/data/ids'
@@ -205,7 +206,7 @@ export default function ReflectionsPage() {
           </Link>
           <Link href="/reflections/new?mode=skill">
             <Button variant="quiet" className="w-auto whitespace-nowrap px-4">
-              Just log a skill →
+              Just log a skill
             </Button>
           </Link>
         </div>
@@ -229,12 +230,10 @@ export default function ReflectionsPage() {
                 </span>
               </span>
               <span className="mt-0.5 block text-xs text-ink-soft">
-                Parking, access, food &amp; culture — from real students.
+                Parking, access, food &amp; culture, from real students.
               </span>
             </span>
-            <span className="shrink-0 text-sage-300" aria-hidden>
-              ›
-            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
           </Card>
         </Link>
 
@@ -244,11 +243,9 @@ export default function ReflectionsPage() {
               <span aria-hidden>🏥</span>
               <span className="flex-1 text-sm">
                 <b className="font-semibold">{placement.context} prep guide</b>
-                <span className="text-ink-soft"> — likely skills &amp; prompts</span>
+                <span className="text-ink-soft"> · likely skills &amp; prompts</span>
               </span>
-              <span className="text-sage-300" aria-hidden>
-                ›
-              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
             </Card>
           </Link>
         )}
@@ -273,7 +270,7 @@ export default function ReflectionsPage() {
             <div className="flex items-baseline justify-between pt-1">
               <h2 className="font-display text-lg font-semibold">Recent reflections</h2>
               <Link href="/history" className="text-sm font-medium text-teal-deep hover:text-ink">
-                See all →
+                See all
               </Link>
             </div>
             <ul className="space-y-3">
