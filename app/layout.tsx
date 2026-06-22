@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Prac.',
   description: 'A placement companion for Australian nursing students.',
   manifest: '/manifest.json',
-  icons: { icon: '/icon.svg?v=2', shortcut: '/icon.svg?v=2', apple: '/icon.svg?v=2' },
+  icons: { icon: '/icon.svg?v=3', shortcut: '/icon.svg?v=3', apple: '/icon.svg?v=3' },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Prac.' },
 }
 
