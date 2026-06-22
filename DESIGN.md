@@ -166,45 +166,52 @@ Shared chrome: `src/ui/AppShell.tsx` (header, nav, sync dot, sign-out).
 
 ## 5. Onboarding (first-ever session)
 
-**Goal:** a reachable identity + one saved artifact, minimum friction. **One text field
-in the whole flow (email); everything else is tap-select.** Re-entry with an existing
-profile redirects straight to `/reflections`.
+**Goal:** a reachable identity + one saved artifact, minimum friction. **The only typed
+fields are email (captured at sign-in) and name; everything else is tap-select.**
+Re-entry with an existing profile redirects straight to `/reflections`.
 
-Sequence (progress bar in parens): **Welcome (8%) → Context (30%) → Year (50%) →
-Specialty (70%) → Acknowledgment (88%) → Success (100%)**.
+Sequence (progress bar in parens): **Welcome (8%) → Name (20%) → Context (34%) → Year
+(52%) → Specialty (70%) → Acknowledgment (88%) → Success (100%)**.
 
 1. **Welcome** — "Your placement, remembered — every shift, every year." Sub: "Write a
    short reflection, log the skills it surfaced, and Prac. maps it to your **NMBA
    standards** into a record you own. Free for your whole degree." CTA "Get started".
-2. **Context** — "Where are you right now?" Three cards: 🏥 *On placement now* / 📅
+2. **Name** — "What should we call you?" One text field, prefilled from the email
+   local-part and editable → `profile.fullName`. ("Your real name works best" — it feeds
+   the grad documents later.)
+3. **Context** — "Where are you right now?" Three cards: 🏥 *On placement now* / 📅
    *Placement this semester* / 🧭 *Just looking around*. Routes the activation tone;
    transient (not persisted).
-3. **Year** — "What year are you in?" Sub: "So your reflections map to the right **NMBA
+4. **Year** — "What year are you in?" Sub: "So your reflections map to the right **NMBA
    standards**." Chips: 1st / 2nd / 3rd / Final year / Postgrad → `profile.yearLevel`.
-4. **Specialty** — "Which ward are you on?" (or "…coming up?"). Chips: Med-surg, Aged
-   care, Mental health, Emergency, Paediatrics, Community, **Not sure yet**, **None of
-   these** (kept distinct). → `placement.ward`.
-5. **Acknowledgment** — "Your record, kept confidential." "Reflections are your
+5. **Specialty** — "Which ward are you on?" (or "…coming up?"). Chips: the 8 placement
+   contexts (Medical/Surgical, Emergency, Aged Care, Mental Health, Community/Primary
+   Care, Perioperative, Paediatric, Rehabilitation/Sub-acute) + **Not sure yet** →
+   `placement.context`.
+6. **Acknowledgment** — "Your record, kept confidential." "Reflections are your
    professional record — not assessment evidence. Keep patient-identifiable details
    out; Prac. flags common ones, but the rest is on you." CTA "I understand — set me up".
-6. **Success** — teal check; "You're set up." **The future-value seed appears once,
+7. **Success** — teal check; "You're set up." **The future-value seed appears once,
    only here:** 🌱 "Everything you log now quietly builds the record your final-year
    self uses for grad applications." CTA varies by context (write first reflection vs
    go to reflections).
 
-Saved on completion: profile (`fullName` from email local-part, `nurseTrack: 'RN'`,
-`yearLevel`, `taggingOn: true`, default reminder) + an active placement (skipped for
-the "just looking around" path, which lands on an orientation screen instead).
+Saved on completion: profile (`fullName` from the Name step, `nurseTrack: 'RN'`,
+`yearLevel`, `taggingOn: true`, default reminder) + an active placement (carrying its
+`context`; skipped for the "just looking around" path, which lands on an orientation
+screen instead).
 
 ---
 
 ## 6. Core loop — the real product
 
 Component: **`src/ui/ReflectionEditor.tsx`** (used by both `/reflections/new` and
-`/edit`). Order: **Reflect → Skills → NMBA mapping → Saved**. Mapping is deliberately
-at the **end**, inferred — never a mid-flow manual gate.
+`/edit`). Order: **Topic → Reflect → Skills → NMBA mapping → Saved**. A topic picker
+(8 cues, e.g. "a clinical skill", "a patient interaction") opens the flow — it swaps the
+"What happened?" prompt, pre-maps standards, and scopes the suggested skills. Mapping is
+deliberately at the **end**, inferred — never a mid-flow manual gate.
 
-### 6.1 Step 1 — Reflect ("Tonight's reflection.")
+### 6.1 Step 1 — Reflect ("Your reflection.")
 
 **Three soft prompts on one screen** (not gated screens):
 
@@ -212,7 +219,7 @@ at the **end**, inferred — never a mid-flow manual gate.
   did you do or see?"_
 - **So what?** (optional, "why it mattered") — _"Why did it matter? How did you feel,
   what did you learn?"_
-- **Now what?** (optional) — _"What will you do differently next shift?"_
+- **Now what?** (required) — _"What will you do differently next shift?"_
 
 Plus a "Date of shift" picker (max today). **Inline identifier nudge** as they type
 (§8): amber alert — _"Some details might identify someone (e.g. names, ages, bed
@@ -220,14 +227,16 @@ numbers). Consider 'the patient' or an initial — we'll ask again before you ex
 
 ### 6.2 Step 2 — Skills ("What did you do?")
 
-- Debounced search over the **skill library** (pre-tagged to standards). Tap to add;
-  each logged skill shows its standard IDs.
+- Debounced search over the **skill library** (pre-tagged to standards), **filtered by
+  the placement context tag**; topic-scoped suggestions show when the box is empty. Tap
+  to add; each logged skill shows its standard IDs.
 - **New / Renewed is auto-detected from the student's own history** (Renewed if logged
   in any prior reflection), with a one-tap override — _"Auto-set from your history —
   tap to change."_ Never a manual toggle from scratch.
-- **Free-text fallback:** _"Add '{query}' as free text — we'll match it to the library
-  later."_ Stored in `rawText`, **queued for normalisation** — never written silently
-  into the corpus.
+- **Custom task** ("can't find it? add your own"): a 60-char name + a tap-select
+  plain-language NMBA standard. Stored with `custom: true` (+ `nmba_standard`), surfaced
+  to moderators in the admin **Custom tasks** report — never written silently into the
+  library corpus.
 - **Skill-only path** (`?mode=skill`): skips Step 1; logging skills is the
   high-frequency / low-effort behaviour and isn't trapped behind the full reflection.
 
@@ -257,8 +266,8 @@ Survives browser close and works offline.
 Heading "Your reflections." + placement context + quiet mono stat ("3 · 2 of 7 std").
 **Coverage is a quiet stat, never the organising frame** (avoids Goodhart). Two CTAs:
 "Start a reflection." and "Just log a skill →". Conditional cards: ward-guide priming
-(§9), a gentle weekly nudge, empty state ("Nothing logged yet. … Two minutes is enough
-tonight."). List = soft-delete with undo toast.
+(§9), a gentle weekly nudge, a temporary Hospital Directory spotlight card, empty state
+("Nothing logged yet. … Two minutes is enough."). List = soft-delete with undo toast.
 
 ### 7.2 Export + identifier gate (`/export`)
 Three steps: **Scope → Gate → Ready.**
@@ -284,10 +293,16 @@ multi-year handoff; password is a dev-era convenience to revisit before v1._
 
 ### 7.5 Admin (`/admin`)
 Moderator-only (`profiles.is_moderator`): the hospital-directory moderation queues
-(pending tips + new-hospital requests) and the hospital editor (`HospitalAdmin`).
+(pending tips + new-hospital requests), the hospital editor (`HospitalAdmin`), and a
+**Custom tasks** report (`get_custom_tasks` — aggregate name · standard · uses).
 
 ### 7.6 Public ward guide (`/guides/[slug]`)
 See §9.
+
+### 7.7 Profile hub (`/profile`)
+The Profile tab: **editable details** — name and year of study (saved via
+`updateProfile`, syncs) with email shown as the read-only sign-in identity — plus links
+to the record/history, Portfolio / Export, Settings, and sign-out.
 
 ---
 
