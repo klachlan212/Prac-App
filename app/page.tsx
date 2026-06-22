@@ -53,7 +53,7 @@ export default function LandingPage() {
       <div className="mt-9">
         <PhoneFrame>
           <p className="font-display text-sm font-semibold">
-            {'Tonight’s reflection'}
+            {'Your reflection'}
             <span className="text-teal">.</span>
           </p>
           <p className="mt-2 rounded-lg bg-sage-50 px-2.5 py-2 text-[11px] leading-snug text-ink-soft">

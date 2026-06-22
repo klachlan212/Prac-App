@@ -265,7 +265,7 @@ export default function ReflectionsPage() {
           <Card className="space-y-1.5 py-8 text-center">
             <p className="font-display text-lg font-semibold">Nothing logged yet.</p>
             <p className="mx-auto max-w-xs text-sm text-ink-soft">
-              Your placement story starts with one shift. Two minutes is enough tonight.
+              Your placement story starts with one shift. Two minutes is enough.
             </p>
           </Card>
         ) : (

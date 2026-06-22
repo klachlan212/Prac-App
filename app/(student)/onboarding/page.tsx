@@ -6,14 +6,14 @@ import { useUser } from '@/src/auth/useUser'
 import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
 import { PLACEMENT_CONTEXTS, CONTEXT_TO_GUIDE } from '@/src/content/contexts'
-import { Button, Card } from '@/src/ui/components'
+import { Button, Card, Input } from '@/src/ui/components'
 
 // First-run setup (spec §2). Tap-select only — the one text field (email) was
 // captured at sign-in. Goal: a reachable identity → one saved artifact, least
 // friction. Email-first sequencing + magic-link (spec §2/§7) is a flagged open
 // question handled with the auth flow, not here.
 
-type Step = 'welcome' | 'context' | 'year' | 'specialty' | 'ack' | 'success'
+type Step = 'welcome' | 'name' | 'context' | 'year' | 'specialty' | 'ack' | 'success'
 type Context = 'placement' | 'upcoming' | 'exploring'
 
 const YEARS: Array<{ label: string; level?: number }> = [
@@ -26,8 +26,9 @@ const YEARS: Array<{ label: string; level?: number }> = [
 const SPECIALTIES = [...PLACEMENT_CONTEXTS, 'Not sure yet']
 const PROGRESS: Record<Step, number> = {
   welcome: 8,
-  context: 30,
-  year: 50,
+  name: 20,
+  context: 34,
+  year: 52,
   specialty: 70,
   ack: 88,
   success: 100,
@@ -47,6 +48,7 @@ export default function OnboardingPage() {
   const [context, setContext] = useState<Context | null>(null)
   const [year, setYear] = useState<(typeof YEARS)[number] | null>(null)
   const [specialty, setSpecialty] = useState<string | null>(null)
+  const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -62,6 +64,12 @@ export default function OnboardingPage() {
     })
   }, [user, router])
 
+  // Prefill the name field from the email local-part — a sensible default the
+  // student can accept or overwrite (keeps the step near-zero friction).
+  useEffect(() => {
+    if (user?.email) setName((n) => n || deriveName(user.email))
+  }, [user])
+
   async function finishSetup() {
     if (!user) return
     setBusy(true)
@@ -69,7 +77,7 @@ export default function OnboardingPage() {
     try {
       await saveProfile({
         id: user.id,
-        fullName: deriveName(user.email),
+        fullName: name.trim() || deriveName(user.email),
         nurseTrack: 'RN',
         yearLevel: year?.level,
         reminderDay: 0,
@@ -126,9 +134,31 @@ export default function OnboardingPage() {
               standards into a record you own. Free for your whole degree.
             </p>
             <div className="mt-8">
-              <Button onClick={() => setStep('context')}>Get started</Button>
+              <Button onClick={() => setStep('name')}>Get started</Button>
             </div>
           </div>
+        )}
+
+        {step === 'name' && (
+          <Stepper
+            eyebrow="First things first"
+            title="What should we call you?"
+            lede="Just for your record — and the grad documents it builds toward. Your real name works best."
+          >
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              autoFocus
+              maxLength={80}
+              autoComplete="name"
+            />
+            <div className="mt-auto pt-8">
+              <Button disabled={!name.trim()} onClick={() => setStep('context')}>
+                Continue
+              </Button>
+            </div>
+          </Stepper>
         )}
 
         {step === 'context' && (

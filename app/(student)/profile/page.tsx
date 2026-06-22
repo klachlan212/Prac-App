@@ -5,16 +5,27 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/src/auth/useUser'
 import { createClient } from '@/src/auth/client'
-import { getProfile } from '@/src/data/profile'
+import { getProfile, updateProfile } from '@/src/data/profile'
 import { AppShell } from '@/src/ui/AppShell'
-import { Button, Card } from '@/src/ui/components'
+import { Button, Card, Field, Input } from '@/src/ui/components'
 
-// Profile hub (spec tab bar): Portfolio / Export, Settings, and sign-out.
+const YEARS: Array<{ label: string; level?: number }> = [
+  { label: '1st year', level: 1 },
+  { label: '2nd year', level: 2 },
+  { label: '3rd year', level: 3 },
+  { label: 'Final year', level: 4 },
+  { label: 'Postgrad', level: undefined },
+]
+
+// Profile hub (spec tab bar): editable details, Portfolio / Export, Settings, sign-out.
 export default function ProfilePage() {
   const router = useRouter()
   const { user, loading } = useUser()
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
+  const [yearLabel, setYearLabel] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/sign-in')
@@ -29,9 +40,21 @@ export default function ProfilePage() {
         return
       }
       setFullName(profile.fullName)
+      const matched = profile.yearLevel ? YEARS.find((y) => y.level === profile.yearLevel) : undefined
+      setYearLabel(matched?.label ?? null)
       setReady(true)
     })()
   }, [user, router])
+
+  async function saveDetails() {
+    if (!user || !fullName.trim()) return
+    setSaving(true)
+    const y = YEARS.find((x) => x.label === yearLabel)
+    await updateProfile(user.id, { fullName: fullName.trim(), yearLevel: y?.level })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
 
   async function signOut() {
     await createClient().auth.signOut()
@@ -58,6 +81,56 @@ export default function ProfilePage() {
             {user.email}
           </p>
         </div>
+
+        {/* Editable details */}
+        <Card className="space-y-4">
+          <Field label="Your name" htmlFor="fullName">
+            <Input
+              id="fullName"
+              value={fullName}
+              maxLength={80}
+              autoComplete="name"
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Your name"
+            />
+          </Field>
+
+          <div>
+            <p className="mb-2 text-sm font-medium">Year of study</p>
+            <div className="flex flex-wrap gap-2">
+              {YEARS.map((y) => (
+                <button
+                  key={y.label}
+                  type="button"
+                  aria-pressed={yearLabel === y.label}
+                  onClick={() => setYearLabel(y.label)}
+                  className={`min-h-[44px] rounded-2xl border px-3.5 text-sm font-medium transition ${
+                    yearLabel === y.label
+                      ? 'border-teal bg-teal text-teal-ink'
+                      : 'border-sage-200 bg-surface text-ink hover:border-sage-300'
+                  }`}
+                >
+                  {y.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button className="w-auto px-5" disabled={saving || !fullName.trim()} onClick={saveDetails}>
+              {saving ? 'Saving…' : 'Save details'}
+            </Button>
+            {saved && (
+              <span className="flex items-center gap-1.5 text-sm text-teal-deep">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal" aria-hidden />
+                Saved
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-ink-faint">
+            Your email ({user.email}) is your sign-in — manage it from Settings.
+          </p>
+        </Card>
 
         <Link href="/history" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">

@@ -383,7 +383,7 @@ export function ReflectionEditor({
         {step === 'reflect' && (
           <div className="space-y-5">
             <h1 className="font-display text-2xl font-semibold tracking-tight">
-              Tonight&rsquo;s reflection<span className="text-teal">.</span>
+              Your reflection<span className="text-teal">.</span>
             </h1>
             <Prompt
               label="What happened?"
