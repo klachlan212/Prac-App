@@ -8,7 +8,7 @@ export const LEGAL = {
   entity: 'Lachlan, trading as Prac.',
   // TODO(founder): ideally a dedicated address (e.g. hello@yourdomain) over personal email.
   supportEmail: 'klachlan212@gmail.com',
-  governingState: 'Victoria',
+  governingState: 'New South Wales',
   lastUpdated: '21 June 2026',
   responseTime: '2–3 business days',
   minAge: 16,

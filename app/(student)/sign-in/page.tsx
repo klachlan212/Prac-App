@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/src/auth/client'
 import { Button, Field, Input } from '@/src/ui/components'
 import { SiteFooter } from '@/src/ui/SiteFooter'
@@ -14,10 +14,14 @@ import { SiteFooter } from '@/src/ui/SiteFooter'
 //    long-term default for the multi-year handoff — revisit before v1.)
 type Mode = 'password' | 'otp-email' | 'otp-code'
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('password')
-  const [email, setEmail] = useState('')
+  const search = useSearchParams()
+  const initialEmail = search.get('email') ?? ''
+  // Arriving from the landing page (email prefilled) → default to the passwordless
+  // code flow, since that's the path that creates a new account.
+  const [mode, setMode] = useState<Mode>(initialEmail ? 'otp-email' : 'password')
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -193,5 +197,13 @@ export default function SignInPage() {
       </div>
       <SiteFooter />
     </main>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   )
 }

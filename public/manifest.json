@@ -2,7 +2,7 @@
   "name": "Prac.",
   "short_name": "Prac.",
   "description": "A placement companion for Australian nursing students.",
-  "start_url": "/",
+  "start_url": "/reflections",
   "display": "standalone",
   "background_color": "#f6f4ef",
   "theme_color": "#f6f4ef",
