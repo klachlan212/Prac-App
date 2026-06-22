@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/src/auth/client'
 import { Button, Field, Input } from '@/src/ui/components'
+import { SiteFooter } from '@/src/ui/SiteFooter'
 
 // Two sign-in methods (CLAUDE.md §A7):
 //  - Password (email + password): default; sidesteps the free-tier one-time-code
@@ -62,8 +64,9 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-7">
+    <main className="flex min-h-screen flex-col p-6">
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <div className="w-full max-w-sm space-y-7">
         <div className="space-y-4 text-center">
           <div className="font-display text-3xl font-semibold tracking-tight">
             Prac<span className="text-teal">.</span>
@@ -174,7 +177,21 @@ export default function SignInPage() {
             </Button>
           </form>
         )}
+
+          <p className="text-center text-xs leading-relaxed text-ink-faint">
+            By continuing you agree to our{' '}
+            <Link href="/terms" className="underline hover:text-ink">
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="underline hover:text-ink">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
       </div>
+      <SiteFooter />
     </main>
   )
 }
