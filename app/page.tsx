@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 const HERO_SUB =
-  'Right now your university holds your placement records — not you. Prac. is the portfolio you own: write a two-minute reflection after each shift, log the skills you used, and it all lives in one place, mapped to your NMBA standards. By final year it’s a complete record of your skills and reflections — ready for your grad applications.'
+  'Write your placement reflections in Prac., submit them to your uni’s assessment, and keep everything in one place. By final year, you’ve got a complete portfolio of skills and learning — ready for grad applications, post-grad studies or your own records.'
 
 const GRAD_BODY =
   'Every reflection and skill you log compounds into a structured record across all your placements. When grad applications land in final year, you are not staring at a blank page trying to remember first year — it is already there, mapped to the standards, ready to export.'
@@ -40,7 +40,7 @@ export default function LandingPage() {
       </span>
 
       <h1 className="mt-5 font-display text-[32px] font-semibold leading-[1.1] tracking-tight">
-        Your placement, remembered — every shift, every year<span className="text-teal">.</span>
+        Your reflections stay with you<span className="text-teal">.</span>
       </h1>
       <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">{HERO_SUB}</p>
 
