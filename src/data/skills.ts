@@ -18,7 +18,7 @@ export async function getSkillLibrary(track: NurseTrack = 'RN'): Promise<SkillLi
     const supabase = createClient()
     const { data, error } = await supabase
       .from('skill_library')
-      .select('id, name, category, track, skill_ansat_map(standard_id, item_code)')
+      .select('id, name, category, track, contexts, skill_ansat_map(standard_id, item_code)')
       .order('name')
     // Never cache an empty/failed read (offline first-load), or skill search is
     // silently dead for the whole session. Return empty now, retry next call.
@@ -30,6 +30,7 @@ export async function getSkillLibrary(track: NurseTrack = 'RN'): Promise<SkillLi
         name: s.name,
         category: s.category ?? undefined,
         track: s.track,
+        contexts: (s.contexts as string[] | null) ?? undefined,
         standardIds: uniq(maps.map((m) => m.standard_id)),
         itemCodes: uniq(maps.map((m) => m.item_code).filter((c): c is string => !!c)),
       }

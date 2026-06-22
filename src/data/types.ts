@@ -25,6 +25,7 @@ export interface Placement {
   userId: string
   ward?: string
   hospital?: string
+  context?: string
   startDate?: string // 'YYYY-MM-DD'
   endDate?: string
   status: 'active' | 'archived'
@@ -55,6 +56,7 @@ export interface LoggedSkill {
   status: SkillStatus
   standardIds: number[]
   itemCodes: string[]
+  custom?: boolean
 }
 
 export type IdentifierKind = 'name' | 'age' | 'bed' | 'date' | 'phone' | 'mrn' | 'other'
@@ -102,6 +104,7 @@ export interface SkillLibraryEntry {
   id: string
   name: string
   category?: string
+  contexts?: string[]
   standardIds: number[]
   itemCodes: string[]
 }

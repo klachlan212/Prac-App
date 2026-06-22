@@ -102,6 +102,8 @@ async function pushReflection(supabase: SB, id: string): Promise<void> {
       skill_id: s.skillId ?? null,
       raw_text: s.rawText ?? null,
       status: s.status,
+      custom: s.custom ?? false,
+      nmba_standard: s.custom ? (s.standardIds[0] ?? null) : null,
       updated_at: r.updatedAt,
     }))
     const { error: kErr } = await supabase.from('skills_logged').insert(rows)
@@ -134,6 +136,7 @@ async function pushPlacement(supabase: SB, id: string): Promise<void> {
     user_id: p.userId,
     ward: p.ward ?? null,
     hospital: p.hospital ?? null,
+    context: p.context ?? null,
     start_date: p.startDate ?? null,
     end_date: p.endDate ?? null,
     status: p.status,
@@ -188,7 +191,7 @@ export async function pull(userId: string): Promise<void> {
   const { data: reflections } = await supabase
     .from('reflections')
     .select(
-      '*, reflection_standards(standard_id, item_code), reflection_tags(label, kind, source), skills_logged(id, skill_id, raw_text, status), identifier_flags(id, label, kind, status)'
+      '*, reflection_standards(standard_id, item_code), reflection_tags(label, kind, source), skills_logged(id, skill_id, raw_text, status, custom, nmba_standard), identifier_flags(id, label, kind, status)'
     )
     .eq('user_id', userId)
   for (const r of reflections ?? []) {
@@ -223,6 +226,7 @@ async function mergePlacement(p: any): Promise<void> {
     userId: p.user_id,
     ward: p.ward ?? undefined,
     hospital: p.hospital ?? undefined,
+    context: p.context ?? undefined,
     startDate: p.start_date ?? undefined,
     endDate: p.end_date ?? undefined,
     status: p.status,
@@ -268,7 +272,9 @@ async function mergeReflection(r: any): Promise<void> {
         rawText: k.raw_text ?? undefined,
         name: entry?.name ?? k.raw_text ?? 'Skill',
         status: k.status,
-        standardIds: entry?.standardIds ?? [],
+        custom: k.custom ?? false,
+        standardIds:
+          k.custom && k.nmba_standard ? [k.nmba_standard] : (entry?.standardIds ?? []),
         itemCodes: entry?.itemCodes ?? [],
       }
     }),

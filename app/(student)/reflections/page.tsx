@@ -12,7 +12,7 @@ import { softDeleteReflection, restoreReflection } from '@/src/data/reflections'
 import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { Button, Card } from '@/src/ui/components'
-import { WARD_TO_GUIDE } from '@/src/content/guides'
+import { CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { todayISO } from '@/src/data/ids'
 
 // ISO week key (year + week number) for the gentle weekly streak.
@@ -210,12 +210,12 @@ export default function ReflectionsPage() {
           </Link>
         </div>
 
-        {placement?.ward && WARD_TO_GUIDE[placement.ward] && (
-          <Link href={`/guides/${WARD_TO_GUIDE[placement.ward]}`}>
+        {placement?.context && CONTEXT_TO_GUIDE[placement.context] && (
+          <Link href={`/guides/${CONTEXT_TO_GUIDE[placement.context]}`}>
             <Card className="flex items-center gap-3 border-sage-200 bg-sage-50">
               <span aria-hidden>🏥</span>
               <span className="flex-1 text-sm">
-                <b className="font-semibold">{placement.ward} prep guide</b>
+                <b className="font-semibold">{placement.context} prep guide</b>
                 <span className="text-ink-soft"> — likely skills &amp; prompts</span>
               </span>
               <span className="text-sage-300" aria-hidden>
