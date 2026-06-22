@@ -18,9 +18,11 @@ function SignInForm() {
   const router = useRouter()
   const search = useSearchParams()
   const initialEmail = search.get('email') ?? ''
-  // Arriving from the landing page (email prefilled) → default to the passwordless
-  // code flow, since that's the path that creates a new account.
-  const [mode, setMode] = useState<Mode>(initialEmail ? 'otp-email' : 'password')
+  // Everyone gets the passwordless email-code flow. Password is a discreet operator
+  // fallback only, reached via /sign-in?staff (so we're never locked out if email
+  // delivery fails). Students never see it.
+  const isStaff = search.get('staff') !== null
+  const [mode, setMode] = useState<Mode>(isStaff ? 'password' : 'otp-email')
   const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
@@ -149,9 +151,11 @@ function SignInForm() {
             <Button type="submit" disabled={busy}>
               {busy ? 'Sending…' : 'Continue'}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => { setMode('password'); setError(null) }}>
-              Use a password instead
-            </Button>
+            {isStaff && (
+              <Button type="button" variant="ghost" onClick={() => { setMode('password'); setError(null) }}>
+                Use a password instead
+              </Button>
+            )}
           </form>
         )}
 
