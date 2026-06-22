@@ -210,6 +210,34 @@ export default function ReflectionsPage() {
           </Link>
         </div>
 
+        {/* Temporary spotlight for the Hospital Directory (lives a level down under
+            Resources). Surfaced on Home so it's discoverable; remove once it has a
+            permanent home in nav. */}
+        <Link href="/hospitals" className="block">
+          <Card className="flex items-center gap-3 border-teal/40 transition hover:border-teal">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-new text-lg"
+              aria-hidden
+            >
+              🏥
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <b className="text-sm font-semibold">Hospital tips</b>
+                <span className="rounded-full bg-teal px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-teal-ink">
+                  New
+                </span>
+              </span>
+              <span className="mt-0.5 block text-xs text-ink-soft">
+                Parking, access, food &amp; culture — from real students.
+              </span>
+            </span>
+            <span className="shrink-0 text-sage-300" aria-hidden>
+              ›
+            </span>
+          </Card>
+        </Link>
+
         {placement?.context && CONTEXT_TO_GUIDE[placement.context] && (
           <Link href={`/guides/${CONTEXT_TO_GUIDE[placement.context]}`}>
             <Card className="flex items-center gap-3 border-sage-200 bg-sage-50">
