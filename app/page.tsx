@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { EmailCapture } from '@/src/ui/landing/EmailCapture'
 import { Download } from 'lucide-react'
+import { Emoji } from '@/src/ui/Emoji'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
 export const metadata: Metadata = {
@@ -98,7 +99,10 @@ export default function LandingPage() {
 
         <div className="mt-5 space-y-3">
           <div className="rounded-card border border-line bg-surface p-4 shadow-card">
-            <p className="text-sm font-semibold">🏥 Royal Melbourne · getting in</p>
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <Emoji name="hospital" className="h-4 w-4" />
+              Royal Melbourne · getting in
+            </p>
             <p className="mt-1 text-[13px] leading-snug text-ink-soft">
               Cheapest parking is the Royal Park lot, ~8 min walk. Staff entrance off Grattan St
               opens at 6am.

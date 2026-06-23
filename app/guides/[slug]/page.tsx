@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getGuide, GUIDES } from '@/src/content/guides'
 import { BottomNav } from '@/src/ui/BottomNav'
-import { Check, Plus, Pencil, LayoutGrid } from 'lucide-react'
+import { Check, Plus, Pencil, LayoutGrid, Heart } from 'lucide-react'
 import { SiteFooter } from '@/src/ui/SiteFooter'
 
 // Public, ungated funnel page (spec §6) — outside the auth group on purpose so it
@@ -37,9 +37,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       </div>
 
       <p className="mt-8 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-teal-deep">
-        <span className="text-teal" aria-hidden>
-          ♥
-        </span>
+        <Heart className="h-3.5 w-3.5 fill-current text-teal" aria-hidden />
         Ward guide · {g.ward} · {g.readMins} min read
       </p>
       <h1 className="mt-3 font-display text-3xl font-semibold leading-tight tracking-tight">

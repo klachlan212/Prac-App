@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { Button, Field, Input, Label } from '@/src/ui/components'
 import { CATEGORIES, type Hospital, type TipCategory, type Confidence } from '@/src/content/hospitals'
 import { submitTip, requestHospital } from '@/src/data/hospitals'
@@ -174,7 +174,7 @@ export function SubmissionForm({
                 aria-label="Close"
                 className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition hover:bg-sage-50 hover:text-ink"
               >
-                ✕
+                <X className="h-5 w-5" aria-hidden />
               </button>
             </div>
 
@@ -234,7 +234,7 @@ export function SubmissionForm({
                 <option value="">Choose a category…</option>
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.emoji} {c.label}
+                    {c.label}
                   </option>
                 ))}
               </select>

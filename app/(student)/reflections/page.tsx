@@ -12,6 +12,7 @@ import { softDeleteReflection, restoreReflection } from '@/src/data/reflections'
 import type { Placement } from '@/src/data/types'
 import { AppShell } from '@/src/ui/AppShell'
 import { ChevronRight } from 'lucide-react'
+import { Emoji } from '@/src/ui/Emoji'
 import { Button, Card } from '@/src/ui/components'
 import { CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { todayISO } from '@/src/data/ids'
@@ -165,7 +166,10 @@ export default function ReflectionsPage() {
           </div>
           <span className="shrink-0 text-right font-mono text-xs text-ink-faint">
             {streak > 0 && (
-              <span className="block font-semibold text-teal-deep">🔥 {streak}-week streak</span>
+              <span className="block font-semibold text-teal-deep">
+                <Emoji name="fire" className="mr-1 inline-block h-3.5 w-3.5 align-text-bottom" />
+                {streak}-week streak
+              </span>
             )}
             <span className="block">
               {count} · {coverage}/7 std
@@ -175,9 +179,7 @@ export default function ReflectionsPage() {
 
         <Link href="/placement" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
-            <span className="text-lg" aria-hidden>
-              📍
-            </span>
+            <Emoji name="pushpin" className="h-5 w-5" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold">{placementName}</span>
               <span className="mt-0.5 block text-xs text-ink-soft">
@@ -216,11 +218,8 @@ export default function ReflectionsPage() {
             permanent home in nav. */}
         <Link href="/hospitals" className="block">
           <Card className="flex items-center gap-3 border-teal/40 transition hover:border-teal">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-new text-lg"
-              aria-hidden
-            >
-              🏥
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-new" aria-hidden>
+              <Emoji name="hospital" className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
@@ -240,7 +239,7 @@ export default function ReflectionsPage() {
         {placement?.context && CONTEXT_TO_GUIDE[placement.context] && (
           <Link href={`/guides/${CONTEXT_TO_GUIDE[placement.context]}`}>
             <Card className="flex items-center gap-3 border-sage-200 bg-sage-50">
-              <span aria-hidden>🏥</span>
+              <Emoji name="hospital" className="h-5 w-5" />
               <span className="flex-1 text-sm">
                 <b className="font-semibold">{placement.context} prep guide</b>
                 <span className="text-ink-soft"> · likely skills &amp; prompts</span>

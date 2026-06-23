@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, Flag } from 'lucide-react'
+import { Emoji } from '@/src/ui/Emoji'
 import {
   CATEGORIES,
   categoryMeta,
@@ -336,8 +337,8 @@ function CategorySection({
         aria-expanded={open}
         className="flex w-full items-center gap-3 p-4 text-left"
       >
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${meta.tint} text-base`}>
-          {meta.emoji}
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${meta.tint}`}>
+          <Emoji name={meta.emoji} className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold leading-tight tracking-tight">
@@ -360,7 +361,7 @@ function CategorySection({
 
           {meta.caution && (
             <p className="rounded-field border border-flag-line bg-flag-bg px-3 py-2 text-xs leading-relaxed text-flag-ink">
-              <span aria-hidden>⚑ </span>
+              <Flag className="mr-1 inline-block h-3.5 w-3.5 align-text-bottom text-flag" aria-hidden />
               {meta.caution}
             </p>
           )}
@@ -411,8 +412,8 @@ function SparseCallout({
 }) {
   return (
     <div className="rounded-card border border-dashed border-sage-300 bg-paper p-4 text-center">
-      <div className="text-2xl" aria-hidden>
-        {meta.emoji}
+      <div aria-hidden>
+        <Emoji name={meta.emoji} className="mx-auto h-9 w-9" />
       </div>
       <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
         {meta.empathyPrompt}

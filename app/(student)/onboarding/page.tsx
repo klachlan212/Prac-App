@@ -7,6 +7,7 @@ import { saveProfile, getProfile } from '@/src/data/profile'
 import { createPlacement } from '@/src/data/placements'
 import { PLACEMENT_CONTEXTS, CONTEXT_TO_GUIDE } from '@/src/content/contexts'
 import { Check, ChevronRight } from 'lucide-react'
+import { Emoji, type EmojiName } from '@/src/ui/Emoji'
 import { Button, Card, Input } from '@/src/ui/components'
 
 // First-run setup (spec §2). Tap-select only — the one text field (email) was
@@ -170,7 +171,7 @@ export default function OnboardingPage() {
           >
             <div className="space-y-3">
               <Choice
-                emoji="🏥"
+                emoji="hospital"
                 title="On placement now"
                 sub="Let’s log your first shift"
                 onClick={() => {
@@ -179,7 +180,7 @@ export default function OnboardingPage() {
                 }}
               />
               <Choice
-                emoji="📅"
+                emoji="calendar"
                 title="Placement this semester"
                 sub="Get set up before day one"
                 onClick={() => {
@@ -188,7 +189,7 @@ export default function OnboardingPage() {
                 }}
               />
               <Choice
-                emoji="🧭"
+                emoji="compass"
                 title="Just looking around"
                 sub="Explore what Prac. does"
                 onClick={() => {
@@ -283,10 +284,10 @@ export default function OnboardingPage() {
             {context === 'exploring' ? (
               <>
                 <div className="mt-6 w-full space-y-2.5 text-left">
-                  <Signpost emoji="📝" title="Reflect" sub="After a shift, about two minutes." />
-                  <Signpost emoji="📚" title="Resources" sub="Hospital guides and ward tips, free." />
+                  <Signpost emoji="memo" title="Reflect" sub="After a shift, about two minutes." />
+                  <Signpost emoji="books" title="Resources" sub="Hospital guides and ward tips, free." />
                   <Signpost
-                    emoji="🌱"
+                    emoji="seedling"
                     title="Your record"
                     sub="What you log builds toward grad applications."
                   />
@@ -296,7 +297,7 @@ export default function OnboardingPage() {
                     onClick={() => router.push(`/guides/${guideSlug}`)}
                     className="mt-4 flex w-full items-center gap-3 rounded-card border border-sage-200 bg-sage-50 p-4 text-left shadow-card transition hover:border-sage-300"
                   >
-                    <span aria-hidden>🏥</span>
+                    <Emoji name="hospital" className="h-5 w-5" />
                     <span className="flex-1 text-sm font-medium">
                       Start with the {specialty} ward guide
                     </span>
@@ -312,7 +313,7 @@ export default function OnboardingPage() {
             ) : (
               <>
                 <Card className="mt-6 flex items-start gap-3 border-sage-200 bg-sage-50 text-left">
-                  <span aria-hidden>🌱</span>
+                  <Emoji name="seedling" className="h-5 w-5" />
                   <span className="text-sm leading-relaxed text-ink-soft">
                     Everything you log now quietly builds the record your final-year self uses for grad
                     applications.
@@ -362,14 +363,11 @@ function Stepper({
   )
 }
 
-function Signpost({ emoji, title, sub }: { emoji: string; title: string; sub: string }) {
+function Signpost({ emoji, title, sub }: { emoji: EmojiName; title: string; sub: string }) {
   return (
     <div className="flex items-center gap-3 rounded-card border border-sage-200 bg-surface p-3.5 shadow-card">
-      <span
-        className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100 text-lg"
-        aria-hidden
-      >
-        {emoji}
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100" aria-hidden>
+        <Emoji name={emoji} className="h-6 w-6" />
       </span>
       <span className="flex-1">
         <span className="block text-sm font-semibold">{title}</span>
@@ -385,7 +383,7 @@ function Choice({
   sub,
   onClick,
 }: {
-  emoji: string
+  emoji: EmojiName
   title: string
   sub: string
   onClick: () => void
@@ -395,8 +393,8 @@ function Choice({
       onClick={onClick}
       className="flex w-full items-center gap-3.5 rounded-card border border-sage-200 bg-surface p-4 text-left shadow-card transition hover:-translate-y-px hover:border-sage-300"
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sage-100 text-xl" aria-hidden>
-        {emoji}
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sage-100" aria-hidden>
+        <Emoji name={emoji} className="h-6 w-6" />
       </span>
       <span className="flex-1">
         <span className="block text-[15px] font-semibold">{title}</span>

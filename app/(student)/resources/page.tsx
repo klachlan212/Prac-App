@@ -7,6 +7,7 @@ import { useUser } from '@/src/auth/useUser'
 import { getProfile } from '@/src/data/profile'
 import { AppShell } from '@/src/ui/AppShell'
 import { ChevronRight } from 'lucide-react'
+import { Emoji } from '@/src/ui/Emoji'
 import { Card } from '@/src/ui/components'
 
 // Resources hub (spec tab bar). A hub so new categories scale without new tabs.
@@ -53,9 +54,7 @@ export default function ResourcesPage() {
 
         <Link href="/hospitals" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
-            <span className="text-xl" aria-hidden>
-              🏥
-            </span>
+            <Emoji name="hospital" className="h-6 w-6" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Hospitals</span>
               <span className="block text-xs text-ink-soft">
@@ -67,9 +66,7 @@ export default function ResourcesPage() {
         </Link>
 
         <Card className="flex items-center gap-3 opacity-75">
-          <span className="text-xl" aria-hidden>
-            🩺
-          </span>
+          <Emoji name="stethoscope" className="h-6 w-6" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold">Specialties</span>
             <span className="block text-xs text-ink-soft">

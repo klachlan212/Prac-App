@@ -8,6 +8,7 @@ import { createClient } from '@/src/auth/client'
 import { getProfile, updateProfile } from '@/src/data/profile'
 import { AppShell } from '@/src/ui/AppShell'
 import { ChevronRight } from 'lucide-react'
+import { Emoji } from '@/src/ui/Emoji'
 import { Button, Card, Field, Input } from '@/src/ui/components'
 
 const YEARS: Array<{ label: string; level?: number }> = [
@@ -135,9 +136,7 @@ export default function ProfilePage() {
 
         <Link href="/history" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
-            <span className="text-xl" aria-hidden>
-              📚
-            </span>
+            <Emoji name="books" className="h-6 w-6" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Your record</span>
               <span className="block text-xs text-ink-soft">
@@ -150,9 +149,7 @@ export default function ProfilePage() {
 
         <Link href="/export" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
-            <span className="text-xl" aria-hidden>
-              📄
-            </span>
+            <Emoji name="page" className="h-6 w-6" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Portfolio / Export</span>
               <span className="block text-xs text-ink-soft">
@@ -165,9 +162,7 @@ export default function ProfilePage() {
 
         <Link href="/settings" className="block">
           <Card className="flex items-center gap-3 transition hover:border-sage-300">
-            <span className="text-xl" aria-hidden>
-              ⚙️
-            </span>
+            <Emoji name="gear" className="h-6 w-6" />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Settings</span>
               <span className="block text-xs text-ink-soft">

@@ -2,9 +2,11 @@
 // it swaps the prompt, pre-maps NMBA standards for the review step, and scopes
 // which skills are surfaced (skillStandards). An empty skillStandards = the full
 // taxonomy (still filtered by placement context).
+import type { EmojiName } from '@/src/ui/Emoji'
+
 export interface ReflectionTopic {
   id: string
-  emoji: string
+  emoji: EmojiName
   label: string
   placeholder: string
   standards: number[]
@@ -14,7 +16,7 @@ export interface ReflectionTopic {
 export const TOPICS: ReflectionTopic[] = [
   {
     id: 'skill',
-    emoji: '🩺',
+    emoji: 'stethoscope',
     label: 'A clinical skill I performed',
     placeholder: 'One moment from today: what did you do, and how did it go?',
     standards: [4, 6],
@@ -22,7 +24,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'interaction',
-    emoji: '💬',
+    emoji: 'speech-balloon',
     label: 'A patient interaction',
     placeholder: 'Tell me about the patient: what happened between you, and what were you thinking?',
     standards: [2],
@@ -30,7 +32,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'handover',
-    emoji: '📋',
+    emoji: 'clipboard',
     label: 'A handover or documentation moment',
     placeholder: 'What did you hand over or document, and what made it tricky or useful?',
     standards: [5, 7],
@@ -38,7 +40,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'medsafety',
-    emoji: '💊',
+    emoji: 'pill',
     label: 'A medication or safety event',
     placeholder:
       'What happened with the medication or safety situation: what did you notice, and what did you do?',
@@ -47,7 +49,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'unplanned',
-    emoji: '🔄',
+    emoji: 'recycle',
     label: 'Something that didn’t go to plan',
     placeholder: 'Walk me through it: what happened, and what would you do differently?',
     standards: [1, 7],
@@ -55,7 +57,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'observed',
-    emoji: '👀',
+    emoji: 'eyes',
     label: 'Something I observed but didn’t do myself',
     placeholder: 'What did you see or hear, and what did it teach you?',
     standards: [1],
@@ -63,7 +65,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'depth',
-    emoji: '🌊',
+    emoji: 'water-wave',
     label: 'A moment I felt out of my depth',
     placeholder: 'What was happening, and what did you do when you weren’t sure?',
     standards: [1, 3],
@@ -71,7 +73,7 @@ export const TOPICS: ReflectionTopic[] = [
   },
   {
     id: 'team',
-    emoji: '🤝',
+    emoji: 'handshake',
     label: 'A team or scope-of-practice moment',
     placeholder: 'What happened with the team: who was involved, and where did you fit?',
     standards: [2, 3, 5],

@@ -16,7 +16,8 @@ import { newId, todayISO } from '@/src/data/ids'
 import { TOPICS, type ReflectionTopic } from '@/src/content/topics'
 import { NMBA_PLAIN, skillInContext } from '@/src/content/contexts'
 import type { AnsatStandard, AnsatItem, SkillLibraryEntry, LoggedSkill } from '@/src/data/types'
-import { Plus, Check, X, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Plus, Check, X, ChevronDown, ChevronRight, ArrowLeft, Flag, Pencil } from 'lucide-react'
+import { Emoji } from './Emoji'
 import { AppShell } from './AppShell'
 import { Button, Card, Field, Input } from './components'
 
@@ -367,8 +368,8 @@ export function ReflectionEditor({
                   onClick={() => selectTopic(t)}
                   className="flex w-full items-center gap-3.5 rounded-card border border-sage-200 bg-surface p-3.5 text-left shadow-card transition hover:-translate-y-px hover:border-sage-300"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-lg" aria-hidden>
-                    {t.emoji}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-100" aria-hidden>
+                    <Emoji name={t.emoji} className="h-6 w-6" />
                   </span>
                   <span className="flex-1 text-[15px] font-medium leading-snug">{t.label}</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-sage-300" aria-hidden />
@@ -408,9 +409,7 @@ export function ReflectionEditor({
 
             {openFlags.length > 0 && (
               <div className="flex items-start gap-2 rounded-card border border-flag-line bg-flag-bg p-3 text-xs leading-relaxed text-flag-ink">
-                <span className="font-semibold text-flag" aria-hidden>
-                  ⚑
-                </span>
+                <Flag className="h-4 w-4 shrink-0 text-flag" aria-hidden />
                 <span>
                   Some details might identify someone (e.g.{' '}
                   <b>{openFlags.slice(0, 3).map((f) => f.label).join(', ')}</b>). Consider
@@ -489,9 +488,7 @@ export function ReflectionEditor({
                   }}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-sage-50"
                 >
-                  <span className="text-ink-faint" aria-hidden>
-                    ✎
-                  </span>
+                  <Pencil className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
                   <span className="flex-1">
                     Can&rsquo;t find it? Add &ldquo;{query.trim()}&rdquo; as your own
                   </span>

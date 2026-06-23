@@ -81,9 +81,11 @@ export interface SubPrompt {
   label: string
 }
 
+import type { EmojiName } from '@/src/ui/Emoji'
+
 export interface CategoryMeta {
   id: TipCategory
-  emoji: string
+  emoji: EmojiName
   label: string
   blurb: string
   empathyPrompt: string
@@ -98,7 +100,7 @@ export interface CategoryMeta {
 export const CATEGORIES: CategoryMeta[] = [
   {
     id: 'Transit',
-    emoji: '🚗',
+    emoji: 'automobile',
     label: 'Official transit & parking',
     blurb: 'Decks, permits, public transport and walk times: the sanctioned ways in.',
     empathyPrompt: 'Have you parked or commuted here yet? Two lines could save a future student the 6am scramble.',
@@ -108,7 +110,7 @@ export const CATEGORIES: CategoryMeta[] = [
   },
   {
     id: 'StreetCheat',
-    emoji: '🤫',
+    emoji: 'shushing-face',
     label: 'The “street cheat”',
     blurb: 'Community-mapped unofficial parking. Read the signs, this one’s on you.',
     empathyPrompt: 'Found a legal park the meters don’t know about? Share it, but check the time limits and ranger patterns first.',
@@ -120,7 +122,7 @@ export const CATEGORIES: CategoryMeta[] = [
   },
   {
     id: 'WardLogistics',
-    emoji: '🔑',
+    emoji: 'key',
     label: 'Logistics & access',
     blurb: 'ID and swipe-card office, student lockers, after-hours entry.',
     empathyPrompt: 'Know where the swipe-card office or student lockers are? Help someone skip the day-one runaround.',
@@ -130,7 +132,7 @@ export const CATEGORIES: CategoryMeta[] = [
   },
   {
     id: 'ShiftFuel',
-    emoji: '☕',
+    emoji: 'hot-beverage',
     label: 'Shift fuel',
     blurb: 'Staff dining, 24h vending, microwaves, and early-opening cafés nearby.',
     empathyPrompt: 'Where do you actually eat on a long shift? Point the next student to it.',
@@ -140,7 +142,7 @@ export const CATEGORIES: CategoryMeta[] = [
   },
   {
     id: 'Expectations',
-    emoji: '💬',
+    emoji: 'speech-balloon',
     label: 'Shift expectations & bottlenecks',
     blurb: 'How shifts really run here: breaks, delays, culture. Honest, non-identifying notes only.',
     empathyPrompt: 'What surprised you about how shifts really run here? Honest, non-identifying notes only.',
