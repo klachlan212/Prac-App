@@ -172,7 +172,7 @@ export default function AdminPage() {
         ) : (
           <>
             <div>
-              <h2 className="mb-2 font-medium">Hospital tips — moderation</h2>
+              <h2 className="mb-2 font-medium">Hospital tips · moderation</h2>
               <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                 Community submissions waiting for review. Approve to publish, or reject. Nothing is
                 public until you approve it.
@@ -205,8 +205,8 @@ export default function AdminPage() {
             <div>
               <h2 className="mb-2 font-medium">Hospital requests</h2>
               <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-                Hospitals students have asked for. Add it via the directory below, then mark reviewed —
-                or dismiss.
+                Hospitals students have asked for. Add it via the directory below, then mark
+                reviewed or dismiss.
               </p>
               {requests.length === 0 ? (
                 <Card>

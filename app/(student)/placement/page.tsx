@@ -112,7 +112,7 @@ export default function PlacementPage() {
             Your placement<span className="text-teal">.</span>
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Update the details any time. When you move to a new placement, start a fresh one — your
+            Update the details any time. When you move to a new placement, start a fresh one, and your
             past reflections stay saved under the old placement.
           </p>
         </div>

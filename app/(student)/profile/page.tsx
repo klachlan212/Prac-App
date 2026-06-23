@@ -129,7 +129,7 @@ export default function ProfilePage() {
             )}
           </div>
           <p className="text-xs text-ink-faint">
-            Your email ({user.email}) is your sign-in — manage it from Settings.
+            Your email ({user.email}) is your sign-in. Manage it from Settings.
           </p>
         </Card>
 

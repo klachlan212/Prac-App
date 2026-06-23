@@ -95,7 +95,7 @@ export default function OnboardingPage() {
 
       setStep('success')
     } catch {
-      setError('Something went wrong. Your details are saved on your device — try again.')
+      setError('Something went wrong. Your details are saved on your device, so try again.')
     } finally {
       setBusy(false)
     }
@@ -128,7 +128,7 @@ export default function OnboardingPage() {
               Built by a registered nurse
             </span>
             <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight">
-              Your placement, remembered — every shift, every year<span className="text-teal">.</span>
+              Your placement, remembered. Every shift, every year<span className="text-teal">.</span>
             </h1>
             <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
               Write a short reflection, log the skills it surfaced, and Prac. maps it to your NMBA
@@ -144,7 +144,7 @@ export default function OnboardingPage() {
           <Stepper
             eyebrow="First things first"
             title="What should we call you?"
-            lede="Just for your record — and the grad documents it builds toward. Your real name works best."
+            lede="Just for your record, and the grad documents it builds toward. Your real name works best."
           >
             <Input
               value={name}
@@ -166,7 +166,7 @@ export default function OnboardingPage() {
           <Stepper
             eyebrow="So we start in the right place"
             title="Where are you right now?"
-            lede="No wrong answer — this just sets up your first screen."
+            lede="No wrong answer. This just sets up your first screen."
           >
             <div className="space-y-3">
               <Choice
@@ -231,7 +231,7 @@ export default function OnboardingPage() {
                   ? 'Which ward are you curious about?'
                   : 'Which placement is coming up?'
             }
-            lede="Pick the closest — you can change it any time."
+            lede="Pick the closest. You can change it any time."
           >
             <div className="flex flex-wrap gap-2.5">
               {SPECIALTIES.map((s) => (
@@ -252,12 +252,12 @@ export default function OnboardingPage() {
           <Stepper
             eyebrow="One thing before you start"
             title="Your record, kept confidential."
-            lede="Reflections are your professional record — not assessment evidence. Keep patient-identifiable details out; Prac. flags common ones, but the rest is on you."
+            lede="Reflections are your professional record, not assessment evidence. Keep patient-identifiable details out; Prac. flags common ones, but the rest is on you."
           >
             <div className="mt-auto space-y-3 pt-6">
               {error && <p className="text-sm text-flag">{error}</p>}
               <Button onClick={finishSetup} disabled={busy}>
-                {busy ? 'Setting up…' : 'I understand — set me up'}
+                {busy ? 'Setting up…' : 'I understand, set me up'}
               </Button>
             </div>
           </Stepper>
@@ -277,13 +277,13 @@ export default function OnboardingPage() {
                 ? 'Your placement’s ready. Let’s capture your first shift.'
                 : context === 'upcoming'
                   ? 'Your placement’s saved and ready when you are.'
-                  : 'Have a look around — nothing to fill in yet. Here’s where everything lives.'}
+                  : 'Have a look around. Nothing to fill in yet, here’s where everything lives.'}
             </p>
 
             {context === 'exploring' ? (
               <>
                 <div className="mt-6 w-full space-y-2.5 text-left">
-                  <Signpost emoji="📝" title="Reflect" sub="After a shift — about two minutes." />
+                  <Signpost emoji="📝" title="Reflect" sub="After a shift, about two minutes." />
                   <Signpost emoji="📚" title="Resources" sub="Hospital guides and ward tips, free." />
                   <Signpost
                     emoji="🌱"

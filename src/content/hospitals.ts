@@ -100,7 +100,7 @@ export const CATEGORIES: CategoryMeta[] = [
     id: 'Transit',
     emoji: '🚗',
     label: 'Official transit & parking',
-    blurb: 'Decks, permits, public transport and walk times — the sanctioned ways in.',
+    blurb: 'Decks, permits, public transport and walk times: the sanctioned ways in.',
     empathyPrompt: 'Have you parked or commuted here yet? Two lines could save a future student the 6am scramble.',
     cta: 'Share transit info',
     tint: 'bg-new',
@@ -110,13 +110,13 @@ export const CATEGORIES: CategoryMeta[] = [
     id: 'StreetCheat',
     emoji: '🤫',
     label: 'The “street cheat”',
-    blurb: 'Community-mapped unofficial parking. Read the signs — this one’s on you.',
-    empathyPrompt: 'Found a legal park the meters don’t know about? Share it — but check the time limits and ranger patterns first.',
+    blurb: 'Community-mapped unofficial parking. Read the signs, this one’s on you.',
+    empathyPrompt: 'Found a legal park the meters don’t know about? Share it, but check the time limits and ranger patterns first.',
     cta: 'Share a parking spot',
     tint: 'bg-plum-bg',
     accent: 'text-plum-ink',
     caution:
-      'Unofficial and community-mapped. Time limits, clearways and ranger patterns change — always read the signs. Tips older than 3 months are downranked.',
+      'Unofficial and community-mapped. Time limits, clearways and ranger patterns change, so always read the signs. Tips older than 3 months are downranked.',
   },
   {
     id: 'WardLogistics',
@@ -142,7 +142,7 @@ export const CATEGORIES: CategoryMeta[] = [
     id: 'Expectations',
     emoji: '💬',
     label: 'Shift expectations & bottlenecks',
-    blurb: 'How shifts really run here — breaks, delays, culture. Honest, non-identifying notes only.',
+    blurb: 'How shifts really run here: breaks, delays, culture. Honest, non-identifying notes only.',
     empathyPrompt: 'What surprised you about how shifts really run here? Honest, non-identifying notes only.',
     cta: 'Share what to expect',
     tint: 'bg-sage-100',
@@ -169,7 +169,7 @@ export const HOSPITALS: Hospital[] = [
     location: 'Parkville, VIC',
     region: 'Melbourne',
     intro:
-      'Big, busy, and a lot to take in on day one. Here’s the practical stuff — where to park, how to get in, where to eat — so your first shift is one less thing to dread.',
+      'Big, busy, and a lot to take in on day one. Here’s the practical stuff: where to park, how to get in, where to eat, so your first shift is one less thing to dread.',
     curatedBy: 'Lachlan',
   },
   {

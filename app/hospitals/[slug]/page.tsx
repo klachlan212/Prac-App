@@ -16,9 +16,9 @@ export async function generateMetadata({
   const { slug } = await params
   const h = getHospital(slug)
   return h
-    ? { title: `${h.name} — placement logistics · Prac.`, description: h.intro }
+    ? { title: `${h.name} · placement logistics · Prac.`, description: h.intro }
     : {
-        title: 'Hospital directory — placement logistics · Prac.',
+        title: 'Hospital directory · placement logistics · Prac.',
         description: 'Parking, access, food and culture for Australian hospital placements.',
       }
 }

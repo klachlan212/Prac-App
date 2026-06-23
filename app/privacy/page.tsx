@@ -7,16 +7,16 @@ export const metadata: Metadata = {
   description: 'What Prac. collects, why, where it lives, and your choices.',
 }
 
-const intro = `Prac. ("Prac.", "we", "us") is built and run by ${LEGAL.founder}, a registered nurse in Australia. This policy explains, in plain language, what we collect, why, where it lives, and your choices. We've tried to write it the way we built the app — honestly.`
+const intro = `Prac. ("Prac.", "we", "us") is built and run by ${LEGAL.founder}, a registered nurse in Australia. This policy explains, in plain language, what we collect, why, where it lives, and your choices. We've tried to write it the way we built the app, honestly.`
 
 const sections: { h: string; body: string[] }[] = [
   {
     h: 'What we collect',
     body: [
-      'Your email address — to create your account and send you sign-in links/codes and (if you opt in) reminders.',
-      'A few profile details you tap in — year of study, nursing track, specialty/ward, and placement details (ward, hospital, dates).',
-      'What you write — your reflections, the skills you log, and the NMBA standards they map to. This is your record.',
-      'Technical basics — a login session stored on your device, and a random "device token" in your browser so the public hospital directory can dedupe anonymous tips and votes. We do not run third-party advertising or analytics trackers.',
+      'Your email address, to create your account and send you sign-in links/codes and (if you opt in) reminders.',
+      'A few profile details you tap in: year of study, nursing track, specialty/ward, and placement details (ward, hospital, dates).',
+      'What you write: your reflections, the skills you log, and the NMBA standards they map to. This is your record.',
+      'Technical basics: a login session stored on your device, and a random "device token" in your browser so the public hospital directory can dedupe anonymous tips and votes. We do not run third-party advertising or analytics trackers.',
     ],
   },
   {
@@ -28,13 +28,13 @@ const sections: { h: string; body: string[] }[] = [
   {
     h: 'An honest note on your reflections',
     body: [
-      'Your reflection text is stored in our database so it is available across your devices and your whole degree. The app flags common identifiers (names, ages, bed/room numbers, dates) as you type and again before you export — but this check is not perfect, and we never claim your record is "safe" or "de-identified". Please keep patient-identifying details out of your reflections; what you write is your responsibility.',
+      'Your reflection text is stored in our database so it is available across your devices and your whole degree. The app flags common identifiers (names, ages, bed/room numbers, dates) as you type and again before you export, but this check is not perfect, and we never claim your record is "safe" or "de-identified". Please keep patient-identifying details out of your reflections; what you write is your responsibility.',
     ],
   },
   {
     h: 'How we use it',
     body: [
-      'To run the core features, sync across your devices, let you export your record, and — only if you opt in — send reminders. We do not sell your data, and we do not use your reflection content for advertising.',
+      'To run the core features, sync across your devices, let you export your record, and (only if you opt in) send reminders. We do not sell your data, and we do not use your reflection content for advertising.',
     ],
   },
   {
@@ -46,7 +46,7 @@ const sections: { h: string; body: string[] }[] = [
   {
     h: 'Your choices and rights',
     body: [
-      'You can view and edit everything in the app, export your full record at any time, and delete your account and all content permanently from Settings. Under the Australian Privacy Principles you may also request access to or correction of your information — just email us.',
+      'You can view and edit everything in the app, export your full record at any time, and delete your account and all content permanently from Settings. Under the Australian Privacy Principles you may also request access to or correction of your information, just email us.',
     ],
   },
   {

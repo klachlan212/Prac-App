@@ -101,7 +101,7 @@ export function SubmissionForm({
         await requestHospital({ name: requestName.trim(), note: text.trim() || null, anonymous })
         setDone(true)
       } catch (err) {
-        setError(submitError(err, 'Couldn’t send just now — check your connection and try again.'))
+        setError(submitError(err, 'Couldn’t send just now. Check your connection and try again.'))
       } finally {
         setSubmitting(false)
       }
@@ -128,7 +128,7 @@ export function SubmissionForm({
       })
       setDone(true)
     } catch (err) {
-      setError(submitError(err, 'Couldn’t submit just now — check your connection and try again.'))
+      setError(submitError(err, 'Couldn’t submit just now. Check your connection and try again.'))
     } finally {
       setSubmitting(false)
     }
@@ -213,7 +213,7 @@ export function SubmissionForm({
                     onChange={(e) => setText(e.target.value)}
                     rows={3}
                     maxLength={MAX}
-                    placeholder="Anything that helps us prioritise — e.g. a major student placement site."
+                    placeholder="Anything that helps us prioritise, e.g. a major student placement site."
                     className="w-full rounded-card border border-line bg-surface p-3.5 text-sm leading-relaxed text-ink shadow-card outline-none transition placeholder:text-ink-faint focus:border-teal focus:ring-2 focus:ring-teal/30"
                   />
                 </div>
@@ -276,12 +276,12 @@ export function SubmissionForm({
                 className="w-full rounded-card border border-line bg-surface p-3.5 text-sm leading-relaxed text-ink shadow-card outline-none transition placeholder:text-ink-faint focus:border-teal focus:ring-2 focus:ring-teal/30"
               />
               <p className="text-xs leading-relaxed text-ink-faint">
-                Hospital-wide logistics only — no ward-specific tips, gossip, patient details or
+                Hospital-wide logistics only: no ward-specific tips, gossip, patient details or
                 confidential operations.
               </p>
             </div>
 
-            <Field label="How confident are you?" hint="Optional — helps us rank it.">
+            <Field label="How confident are you?" hint="Optional, helps us rank it.">
               <div className="flex gap-2">
                 {(['High', 'Medium', 'Low'] as Confidence[]).map((c) => (
                   <button

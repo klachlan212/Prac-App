@@ -180,7 +180,7 @@ export default function LandingPage() {
           Start the portfolio you own<span className="text-teal">.</span>
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          Pop in your email — personal or uni — and you’re in. Your record starts with your next
+          Pop in your email, personal or uni, and you’re in. Your record starts with your next
           shift, and it’s yours to keep.
         </p>
         <div className="mt-4">

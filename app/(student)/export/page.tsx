@@ -254,7 +254,7 @@ export default function ExportPage() {
               <h1 className="mt-1.5 font-display text-xl font-semibold leading-tight text-flag-ink">
                 {issues.length > 0
                   ? `${issues.length} detail${issues.length === 1 ? '' : 's'} could identify someone.`
-                  : 'Nothing common flagged — but this check is partial.'}
+                  : 'Nothing common flagged, but this check is partial.'}
               </h1>
             </div>
 
@@ -292,7 +292,7 @@ export default function ExportPage() {
               </div>
             ) : (
               <p className="text-sm leading-relaxed text-ink-soft">
-                Nothing common left to flag. Read it through once more before you share — the check
+                Nothing common left to flag. Read it through once more before you share. The check
                 misses unstructured identifiers (rare presentations, indirect references).
               </p>
             )}

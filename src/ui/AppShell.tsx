@@ -7,7 +7,7 @@ import { useSync, type SyncState } from '@/src/sync/useSync'
 import { BottomNav } from './BottomNav'
 
 const SYNC_LABEL: Record<SyncState, string> = {
-  offline: 'Offline — saved on device',
+  offline: 'Offline · saved on device',
   syncing: 'Syncing…',
   pending: 'Saving…',
   synced: 'All saved',

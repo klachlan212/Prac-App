@@ -11,7 +11,7 @@ export default function SupportPage() {
   return (
     <LegalPage title="Help & contact">
       <p>
-        Prac. is built and supported by {LEGAL.founder}, a registered nurse — so it is a small team
+        Prac. is built and supported by {LEGAL.founder}, a registered nurse, so it is a small team
         (hi). The fastest way to reach a human is email.
       </p>
 
@@ -26,7 +26,7 @@ export default function SupportPage() {
 
       <H2>Reporting a bug</H2>
       <p className="mt-2">
-        Tell us what device and browser you are on and what happened — the more specific, the
+        Tell us what device and browser you are on and what happened. The more specific, the
         faster we can fix it.
       </p>
 

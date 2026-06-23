@@ -47,7 +47,7 @@ export default function ResourcesPage() {
             Resources<span className="text-teal">.</span>
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Practical help for placement — beyond your own reflections.
+            Practical help for placement, beyond your own reflections.
           </p>
         </div>
 

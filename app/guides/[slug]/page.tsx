@@ -22,7 +22,7 @@ export async function generateMetadata({
   const { slug } = await params
   const g = getGuide(slug)
   if (!g) return { title: 'Guide not found · Prac.' }
-  return { title: `${g.ward} placement — a nurse’s guide · Prac.`, description: g.intro }
+  return { title: `${g.ward} placement · a nurse’s guide · Prac.`, description: g.intro }
 }
 
 export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -75,7 +75,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           Skills you’ll probably touch
         </h2>
         <p className="mt-1.5 text-sm text-ink-soft">
-          You won’t do all of these, and you’ll do some a lot. Don’t aim to tick them off — just
+          You won’t do all of these, and you’ll do some a lot. Don’t aim to tick them off, just
           notice when they happen.
         </p>
         <div className="mt-3 space-y-2">

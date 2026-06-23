@@ -150,7 +150,7 @@ export function HospitalAdmin() {
             />
           </Field>
           {!editingExisting && (
-            <Field label="Slug (URL id)" hint="Auto-filled from the name — only change if you need to.">
+            <Field label="Slug (URL id)" hint="Auto-filled from the name, only change if you need to.">
               <Input
                 value={form.id}
                 onChange={(e) => {

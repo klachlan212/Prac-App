@@ -357,7 +357,7 @@ export function ReflectionEditor({
                 What kind of moment<span className="text-teal">?</span>
               </h1>
               <p className="mt-1 text-sm text-ink-soft">
-                Pick the closest — it just sets the right cue. No wrong answer.
+                Pick the closest, it just sets the right cue. No wrong answer.
               </p>
             </div>
             <div className="space-y-2.5">
@@ -386,7 +386,7 @@ export function ReflectionEditor({
             </h1>
             <Prompt
               label="What happened?"
-              placeholder={topic?.placeholder ?? 'One moment from today — what did you do or see?'}
+              placeholder={topic?.placeholder ?? 'One moment from today: what did you do or see?'}
               value={whatHappened}
               onChange={setWhatHappened}
               autoFocus
@@ -414,7 +414,7 @@ export function ReflectionEditor({
                 <span>
                   Some details might identify someone (e.g.{' '}
                   <b>{openFlags.slice(0, 3).map((f) => f.label).join(', ')}</b>). Consider
-                  &ldquo;the patient&rdquo; or an initial — we&rsquo;ll ask again before you export.
+                  &ldquo;the patient&rdquo; or an initial, and we&rsquo;ll ask again before you export.
                 </span>
               </div>
             )}
@@ -467,7 +467,7 @@ export function ReflectionEditor({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search skills — e.g. wound care"
+              placeholder="Search skills (e.g. wound care)"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && results[0]) addSkill(results[0])
               }}
@@ -558,7 +558,7 @@ export function ReflectionEditor({
                     className={`min-h-[36px] rounded-lg px-2.5 text-xs font-semibold ${
                       s.status === 'new' ? 'bg-new text-teal-deep' : 'bg-renew-bg text-renew'
                     }`}
-                    title="Auto-set from your history — tap to change"
+                    title="Auto-set from your history, tap to change"
                   >
                     {s.status === 'new' ? 'New' : 'Renewed'}
                     <ChevronDown className="ml-0.5 inline h-3.5 w-3.5" aria-hidden />

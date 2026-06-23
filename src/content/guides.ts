@@ -30,11 +30,11 @@ export const GUIDES: Record<string, Guide> = {
     readMins: 4,
     title: 'So you’ve got a med-surg placement.',
     intro:
-      'Here’s what it actually feels like on the floor — the rhythm, the skills you’ll keep meeting, and the moments worth thinking twice about. From someone who’s been there.',
+      'Here’s what it actually feels like on the floor: the rhythm, the skills you’ll keep meeting, and the moments worth thinking twice about. From someone who’s been there.',
     feel: [
-      'The pace is relentless but rhythmic — a med round, then obs, then a call bell, then back again. You’ll feel behind for the first week. Everyone does.',
+      'The pace is relentless but rhythmic: a med round, then obs, then a call bell, then back again. You’ll feel behind for the first week. Everyone does.',
       'You’ll learn more from handover than from any textbook. Listen for what the outgoing nurse is worried about, not just the numbers.',
-      'The win isn’t doing everything — it’s noticing the one patient who isn’t quite right and saying something early.',
+      'The win isn’t doing everything, it’s noticing the one patient who isn’t quite right and saying something early.',
     ],
     skills: [
       { name: 'Basic wound care & dressings', standard: 4 },
@@ -45,7 +45,7 @@ export const GUIDES: Record<string, Guide> = {
     ],
     prompts: [
       'The first time you sensed a patient was deteriorating before the obs confirmed it.',
-      'A handover that went well — or didn’t — and what you’d do differently.',
+      'A handover that went well, or didn’t, and what you’d do differently.',
       'A moment you spoke up for a patient, or wished you had.',
     ],
     byline: {

@@ -212,7 +212,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
 
       {/* Scope guardrail */}
       <p className="mt-4 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
-        Hospital-wide logistics only — parking, access, amenities, culture. Not ward-specific tips,
+        Hospital-wide logistics only: parking, access, amenities, culture. Not ward-specific tips,
         staff gossip, patient details or confidential operations.
       </p>
 
@@ -273,7 +273,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
       )}
 
       <p className="mt-8 border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-faint">
-        Crowd-sourced and reviewed practical guidance — not official hospital instruction. Things
+        Crowd-sourced and reviewed practical guidance, not official hospital instruction. Things
         change: always read the signage and check with your facilitator or the hospital.
       </p>
 
@@ -369,7 +369,7 @@ function CategorySection({
           {state === 'hybrid' && (
             <>
               <p className="text-xs font-medium text-ink-soft">
-                We’ve started this one — help us finish it.
+                We’ve started this one, help us finish it.
               </p>
               {refCards.map((r) => (
                 <ReferenceCardView key={r.id} card={r} />

@@ -119,7 +119,7 @@ export default function HistoryPage() {
             Your record<span className="text-teal">.</span>
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Every reflection you&rsquo;ve saved — filter to find one.
+            Every reflection you&rsquo;ve saved, filter to find one.
           </p>
         </div>
 
