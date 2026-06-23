@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { EmailCapture } from '@/src/ui/landing/EmailCapture'
+import { LandingDemo } from '@/src/ui/landing/LandingDemo'
 import { Download } from 'lucide-react'
 import { Emoji } from '@/src/ui/Emoji'
 import { SiteFooter } from '@/src/ui/SiteFooter'
@@ -60,33 +61,9 @@ export default function LandingPage() {
         <p className="mt-2 text-xs text-ink-faint">Free to start · No credit card · Leave anytime.</p>
       </div>
 
-      {/* App-screen mock: the core loop */}
+      {/* Interactive core-loop preview: tap through Reflect, Skills, Saved */}
       <div className="mt-9">
-        <PhoneFrame>
-          <p className="font-display text-sm font-semibold">
-            {'Your reflection'}
-            <span className="text-teal">.</span>
-          </p>
-          <p className="mt-2 rounded-lg bg-sage-50 px-2.5 py-2 text-[11px] leading-snug text-ink-soft">
-            One moment from today: what did you do or see?
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            <Chip>Wound care · New</Chip>
-            <Chip>ISBAR handover · New</Chip>
-          </div>
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-line bg-paper px-2.5 py-2">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-ink-faint">
-              Maps to NMBA standards
-            </span>
-            <span className="ml-auto flex gap-1">
-              {['1', '2', '4'].map((s) => (
-                <span key={s} className="rounded bg-new px-1.5 py-0.5 font-mono text-[10px] text-teal-deep">
-                  {s}
-                </span>
-              ))}
-            </span>
-          </div>
-        </PhoneFrame>
+        <LandingDemo />
       </div>
 
       {/* ---------- Pre-placement stress / guides (before reflections come into play) ---------- */}
@@ -195,22 +172,6 @@ export default function LandingPage() {
 
       <SiteFooter />
     </main>
-  )
-}
-
-function PhoneFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto w-full max-w-[300px] rounded-[1.75rem] border border-line bg-paper p-3 shadow-float">
-      <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">{children}</div>
-    </div>
-  )
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-lg border border-line bg-paper px-2 py-1 text-[11px] font-medium">
-      {children}
-    </span>
   )
 }
 
