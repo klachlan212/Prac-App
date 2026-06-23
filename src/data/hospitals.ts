@@ -20,6 +20,21 @@ export function getVoterToken(): string {
   return t
 }
 
+// In-memory caches so repeat navigation (list → profile → back) is instant with no
+// loading flash. The live fetch still runs to refresh in the background.
+let hospitalsCache: Hospital[] | null = null
+const tipsCache = new Map<string, Tip[]>()
+
+export function getCachedHospitals(): Hospital[] | null {
+  return hospitalsCache
+}
+export function getCachedHospitalBySlug(slug: string): Hospital | null {
+  return hospitalsCache?.find((h) => h.slug === slug) ?? null
+}
+export function getCachedTips(hospitalId: string): Tip[] | null {
+  return tipsCache.get(hospitalId) ?? null
+}
+
 interface TipRow {
   id: string
   hospital_id: string
@@ -65,7 +80,9 @@ export async function fetchTips(hospitalId: string): Promise<Tip[]> {
     .eq('hospital_id', hospitalId)
     .eq('is_published', true)
   if (error) throw error
-  return ((data as TipRow[]) ?? []).map(mapTip)
+  const mapped = ((data as TipRow[]) ?? []).map(mapTip)
+  tipsCache.set(hospitalId, mapped)
+  return mapped
 }
 
 interface RefRow {
@@ -199,7 +216,8 @@ export async function fetchHospitals(): Promise<Hospital[]> {
     .order('region', { ascending: true })
     .order('name', { ascending: true })
   if (error) throw error
-  return ((data as HospitalRow[]) ?? []).map(mapHospital)
+  hospitalsCache = ((data as HospitalRow[]) ?? []).map(mapHospital)
+  return hospitalsCache
 }
 
 export async function fetchHospitalBySlug(slug: string): Promise<Hospital | null> {

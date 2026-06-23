@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { fetchHospitals } from '@/src/data/hospitals'
+import { fetchHospitals, getCachedHospitals } from '@/src/data/hospitals'
 import { AUS_STATES, regionGroup, STATE_CAPITAL, type AusState, type Hospital } from '@/src/content/hospitals'
 import { TipCount } from './TipCount'
 
@@ -10,7 +10,8 @@ import { TipCount } from './TipCount'
 // Filterable by state; within a state, the capital city is one group and
 // everything else falls under "<STATE> Regional/Rural/Remote".
 export function HospitalsDirectory() {
-  const [hospitals, setHospitals] = React.useState<Hospital[] | null>(null)
+  // Seed from cache so coming back to the list is instant (no loading flash).
+  const [hospitals, setHospitals] = React.useState<Hospital[] | null>(() => getCachedHospitals())
   const [error, setError] = React.useState(false)
   const [stateFilter, setStateFilter] = React.useState<AusState | null>(null)
 

@@ -22,6 +22,8 @@ import {
   fetchHospitals,
   fetchRefCards,
   fetchTips,
+  getCachedHospitalBySlug,
+  getCachedTips,
 } from '@/src/data/hospitals'
 import { SubmissionForm } from './SubmissionForm'
 import { BottomNav } from '@/src/ui/BottomNav'
@@ -46,11 +48,12 @@ export interface HospitalProfileProps {
 
 export function HospitalProfile({ slug }: HospitalProfileProps) {
   const [now, setNow] = React.useState(() => Date.now())
-  const [hospital, setHospital] = React.useState<Hospital | null>(null)
+  // Seed from cache so revisiting a hospital is instant (no loading flash).
+  const [hospital, setHospital] = React.useState<Hospital | null>(() => getCachedHospitalBySlug(slug))
   const [hospitalsList, setHospitalsList] = React.useState<Hospital[]>([])
-  const [tips, setTips] = React.useState<Tip[]>([])
+  const [tips, setTips] = React.useState<Tip[]>(() => getCachedTips(slug) ?? [])
   const [refCards, setRefCards] = React.useState<ReferenceCard[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const [loading, setLoading] = React.useState(() => !getCachedHospitalBySlug(slug))
   const [loadError, setLoadError] = React.useState(false)
   const [votes, setVotes] = React.useState<VoteMap>({})
   const [sort, setSort] = React.useState<SortMode>('helpful')
@@ -69,7 +72,7 @@ export function HospitalProfile({ slug }: HospitalProfileProps) {
       /* ignore */
     }
     let active = true
-    setLoading(true)
+    if (!getCachedHospitalBySlug(slug)) setLoading(true)
     setLoadError(false)
     ;(async () => {
       try {
