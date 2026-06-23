@@ -68,7 +68,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 text-[11px] font-medium transition ${
+              className={`flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 text-xs font-medium transition ${
                 active ? 'text-teal-deep' : 'text-ink-faint hover:text-ink'
               }`}
             >

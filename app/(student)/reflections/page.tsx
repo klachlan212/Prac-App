@@ -301,7 +301,7 @@ export default function ReflectionsPage() {
                         <p className="mt-1.5 line-clamp-2 text-sm font-medium text-ink">
                           {r.body || <span className="italic text-ink-faint">Skill log</span>}
                         </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-soft">
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft">
                           {(r.skills?.length ?? 0) > 0 && (
                             <span>
                               {r.skills.length} skill{r.skills.length === 1 ? '' : 's'}
