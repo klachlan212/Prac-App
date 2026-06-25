@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ComponentType } from 'react'
+import { FeatureShowcase } from '@/src/ui/landing/FeatureShowcase'
 import {
   HomeScreen,
   PlacementScreen,
@@ -58,14 +59,29 @@ export default function PreviewPage() {
         Feature screens<span className="text-teal">.</span>
       </h1>
       <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-        Candidate splash screens for the landing page. Review and tell me which to keep; the bulky
-        copy gets trimmed once these are locked.
+        Candidate splash screens for the landing page. The top block is the interactive version
+        (tap the pills); below is every screen at a glance. The bulky copy gets trimmed once these
+        are locked.
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Interactive showcase (the version destined for the landing) */}
+      <section className="mt-10 rounded-card border border-sage-200 bg-sage-50 p-6 shadow-card sm:p-8">
+        <h2 className="text-center font-display text-2xl font-semibold tracking-tight">
+          See Prac. in action<span className="text-teal">.</span>
+        </h2>
+        <div className="mt-6">
+          <FeatureShowcase />
+        </div>
+      </section>
+
+      {/* Every screen, static, for at-a-glance review */}
+      <h2 className="mt-14 font-display text-lg font-semibold tracking-tight">
+        Every screen at a glance
+      </h2>
+      <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
         {SCREENS.map(({ label, caption, Screen }) => (
           <div key={label}>
-            <h2 className="font-display text-lg font-semibold tracking-tight">{label}</h2>
+            <h3 className="font-display text-lg font-semibold tracking-tight">{label}</h3>
             <p className="mb-4 mt-1 text-sm leading-relaxed text-ink-soft">{caption}</p>
             <Screen />
           </div>
